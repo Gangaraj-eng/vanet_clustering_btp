@@ -8,7 +8,7 @@ namespace ns3
   VanetNode::VanetNode()
   {
     // initially unclustered
-    NS_LOG_INFO("Create a vanet node\n");
+    NS_LOG_INFO("Hello from the Vanet Node constructor");
     vtype = UNCLUSTERED;
   }
 } // namespace ns3

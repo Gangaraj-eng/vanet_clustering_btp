@@ -1,0 +1,59 @@
+Adding this module into ns3 : 
+The CMakeLists.txt file specifies the header files and source files of this module with their paths
+To start using these, run the following commands from top level directory.
+1.configuring
+./ns3 configure --enable-examples --enable-tests --enable-logs --enable-asserts
+2.Building
+./ns3 build
+The above two commands need to be run whenever new header files or source files are added 
+By doing this we can use our header files by importing them like #include "ns3/ourheaderfile.h"
+
+To run a file:
+For running a file, we need to move that file into scratch folder, doing this every time is hectic and it will fills 
+the scratch folder, so we can move it to scratch temporarily and then delete it again using the following script that I 
+had created. Add the below code into a new file with name Run_File.sh in top level directory
+
+-------------------------------------------------------------------------
+#!/bin/bash
+
+# Check if a file path is provided as an argument
+if [ $# -eq 0 ]; then
+  echo "Error: Please provide a file path as an argument."
+  exit 1
+fi
+
+# Get the file path
+file_path="$1"
+
+# Check if the file exists
+if [ ! -f "$file_path" ]; then
+  echo "Error: File '$file_path' does not exist."
+  exit 1
+fi
+
+# Extract the filename using parameter expansion
+filename="${file_path##*/}"
+
+# Extract the file without extension
+file_without_extension="${filename%. *}"
+
+# Create the scratch folder if it doesn't exist
+
+# Move the file to the scratch folder
+cp "$file_path" "./scratch/$filename"
+
+# Print the extracted information
+echo ""
+echo "Running the file..."
+echo ""
+
+./ns3 run "scratch/$file_without_extension"
+
+rm "./scratch/$filename"
+-------------------------------------------------------------------------
+Set the permission of the Run_File file to be executable
+Then to run any file, you can run using the command from top level directory
+./Run_File.sh <path-to-the-file
+
+// for example you can run the sample.cc using 
+./Run_File.sh ./src/btp/sample.cc 
