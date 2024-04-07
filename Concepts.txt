@@ -1,0 +1,28 @@
+A Node represents any device in the internet whether it can be a part of Vanet, FANET or RSU
+A Node can have multiple interfaces. The possible reason could be to connect to multiple networks
+For each interface, there will be a different NetDevice associated with it.
+
+
+The general procedure to be followed for simulation:
+followed from the example of AODV 
+
+1 Create Nodes
+  Create nodes as required for the system
+  Assign the IDS or names for nodes, can be done using Names::Add which will store string 
+  to object mapping and can be acessed anywhere
+  Add the Mobility model to the nodes
+2 Create Devices
+  Create net devices(for interfaces) for the nodes
+  For wifi devices, setup the physical and mac layers of the device, then install on nodes 
+3 Install Internet stack
+  Set the type of routing protocol that you want to run on your nodes
+  using the InternetStackHelper::SetRoutingHelper
+4 Install Applications
+  Install the application that you want to run on your devices
+  This application is responsible for what data to be transmitted and how the devices behave
+  It interacts with network stack to send packets
+
+
+Mobility Model:
+To keep track of current position and velocity of a Node
+Position co-ordiantes and velocity are in m and m/s units
