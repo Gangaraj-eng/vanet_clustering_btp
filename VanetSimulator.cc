@@ -6,6 +6,7 @@
 #include "ns3/netanim-module.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/VanetNode.h"
+#include "ns3/ClusterRoutingHelper.h"
 
 using namespace ns3;
 
@@ -20,7 +21,10 @@ public:
 private:
   int nNodes;
   NodeContainer vanetNodes;
+  NetDeviceContainer devices;
   double simulationTime; // in seconds
+  Ipv4InterfaceContainer interfaces;
+
 private:
   void CreateNodes();
   void InstallMobilityModel();
@@ -37,9 +41,10 @@ int main()
   return 0;
 }
 
-VanetSimulator::VanetSimulator(){
-    nNodes=30;
-    simulationTime=30; // 30 seconds
+VanetSimulator::VanetSimulator()
+{
+  nNodes = 2;
+  simulationTime = 30; // 30 seconds
 }
 
 void VanetSimulator::Run()
@@ -103,16 +108,40 @@ void VanetSimulator::InstallEnergyModel()
 {
 }
 
-void VanetSimulator::CreateDevices(){
-  
+void VanetSimulator::CreateDevices()
+{
+
+  // creating wifi devices
+  WifiMacHelper wifiMac;
+  wifiMac.SetType("ns3::AdhocWifiMac");
+
+  YansWifiPhyHelper wifiPhy;
+  YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
+  wifiPhy.SetChannel(wifiChannel.Create());
+
+  WifiHelper wifi;
+  wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
+                               "DataMode",
+                               StringValue("OfdmRate6Mbps"),
+                               "RtsCtsThreshold",
+                               UintegerValue(0));
+  devices = wifi.Install(wifiPhy, wifiMac, vanetNodes);
 }
 
 // Set your routing protocol in internet stack
-void VanetSimulator::InstallInternetStack(){
-
+void VanetSimulator::InstallInternetStack()
+{
+  ClusterRoutingHelper crhelper;
+  LogComponentEnable("ClusterRoutingProtocol",LOG_LEVEL_INFO);
+  InternetStackHelper stack;
+  stack.SetRoutingHelper(crhelper);
+  stack.Install(vanetNodes);
+  Ipv4AddressHelper address;
+  address.SetBase("10.0.0.0", "255.0.0.0");
+  interfaces = address.Assign(devices);
 }
 
 // set your application
-void VanetSimulator::InstallApplications(){
-
+void VanetSimulator::InstallApplications()
+{
 }
