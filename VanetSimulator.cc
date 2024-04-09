@@ -7,6 +7,7 @@
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/VanetNode.h"
 #include "ns3/ClusterRoutingHelper.h"
+#include "ns3/VanetNodeApplicationHelper.h"
 
 using namespace ns3;
 
@@ -132,7 +133,7 @@ void VanetSimulator::CreateDevices()
 void VanetSimulator::InstallInternetStack()
 {
   ClusterRoutingHelper crhelper;
-  LogComponentEnable("ClusterRoutingProtocol",LOG_LEVEL_INFO);
+  LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
   InternetStackHelper stack;
   stack.SetRoutingHelper(crhelper);
   stack.Install(vanetNodes);
@@ -144,4 +145,9 @@ void VanetSimulator::InstallInternetStack()
 // set your application
 void VanetSimulator::InstallApplications()
 {
+  VanetNodeApplicationHelper vnodeapphelper;
+  LogComponentEnable("VanetNodeApplication", LOG_LEVEL_INFO);
+  ApplicationContainer ac = vnodeapphelper.Install(vanetNodes);
+  ac.Start(Seconds(0));
+  ac.Stop(Seconds(10));
 }
