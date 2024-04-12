@@ -8,6 +8,7 @@
 #include "ns3/VanetNode.h"
 #include "ns3/ClusterRoutingHelper.h"
 #include "ns3/VanetNodeApplicationHelper.h"
+#include "ns3/molsr-helper.h"
 
 using namespace ns3;
 
@@ -33,6 +34,7 @@ private:
   void CreateDevices();
   void InstallInternetStack();
   void InstallApplications();
+  void ConfigureAnimation(AnimationInterface &anim);
 };
 
 int main()
@@ -44,7 +46,7 @@ int main()
 
 VanetSimulator::VanetSimulator()
 {
-  nNodes = 2;
+  nNodes = 3;
   simulationTime = 30; // 30 seconds
 }
 
@@ -58,10 +60,19 @@ void VanetSimulator::Run()
   std::cout << "Initialized VANET\n";
   // output file for NetAnim
   AnimationInterface anim("VanetSimulator.xml");
+  ConfigureAnimation(anim);
 
   Simulator::Stop(Seconds(simulationTime));
   Simulator::Run();
   Simulator::Destroy();
+}
+
+void VanetSimulator::ConfigureAnimation(AnimationInterface &anim){
+    int imgId = anim.AddResource("/home/raju1234/Downloads/v3.png");
+    for(int i=0;i<nNodes;i++){
+      anim.UpdateNodeImage(vanetNodes.Get(i)->GetId(),imgId);
+      anim.UpdateNodeSize(vanetNodes.Get(i)->GetId(),50,50);
+    }
 }
 
 void VanetSimulator::CreateNodes()
@@ -133,9 +144,11 @@ void VanetSimulator::CreateDevices()
 void VanetSimulator::InstallInternetStack()
 {
   ClusterRoutingHelper crhelper;
-  LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
+  MolsrHelper mhelper;
+  // LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
+  LogComponentEnable("MolsrRoutingProtocol",LOG_LEVEL_ERROR);
   InternetStackHelper stack;
-  stack.SetRoutingHelper(crhelper);
+  stack.SetRoutingHelper(mhelper);
   stack.Install(vanetNodes);
   Ipv4AddressHelper address;
   address.SetBase("10.0.0.0", "255.0.0.0");

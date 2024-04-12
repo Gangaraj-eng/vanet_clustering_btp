@@ -56,4 +56,4 @@ Then to run any file, you can run using the command from top level directory
 ./Run_File.sh <path-to-the-file
 
 // for example you can run the sample.cc using 
-./Run_File.sh ./src/btp/sample.cc 
+./Run_File.sh ./src/btp/sample.cc

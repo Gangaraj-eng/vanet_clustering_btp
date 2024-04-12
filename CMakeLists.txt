@@ -5,6 +5,10 @@ build_lib(
   Nodes/FANET/FanetNode.cc
   Routing/ClusterRouting/helper/ClusterRoutingHelper.cc
   Routing/ClusterRouting/model/ClusterRoutingProtocol.cc
+  Routing/MolsrRouting/helper/molsr-helper.cc
+  Routing/MolsrRouting/model/molsr-header.cc
+  Routing/MolsrRouting/model/molsr-state.cc
+  Routing/MolsrRouting/model/molsr-routing-protocol.cc
   Application/model/VanetNodeApplication.cc
   Application/helper/VanetNodeApplicationHelper.cc
   Nodes/RSU/RSUNode.cc
@@ -12,6 +16,11 @@ build_lib(
   Nodes/VANET/VanetNode.h
   Routing/ClusterRouting/helper/ClusterRoutingHelper.h
   Routing/ClusterRouting/model/ClusterRoutingProtocol.h
+  Routing/MolsrRouting/helper/molsr-helper.h
+  Routing/MolsrRouting/model/molsr-header.h
+  Routing/MolsrRouting/model/molsr-state.h
+  Routing/MolsrRouting/model/molsr-repositories.h
+  Routing/MolsrRouting/model/molsr-routing-protocol.h
   Nodes/FANET/FanetNode.h
   Nodes/RSU/RSUNode.h
   Application/model/VanetNodeApplication.h

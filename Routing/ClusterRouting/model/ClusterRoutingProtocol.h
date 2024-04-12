@@ -6,12 +6,15 @@
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/node.h"
+#include "ns3/timer.h"
+#include "ns3/nstime.h"
 
 namespace ns3
 {
   class ClusterRoutingProtocol : public Ipv4RoutingProtocol
   {
   public:
+    static const uint16_t CLUSTER_ROUTING_PORT_NUMBER;
     static TypeId GetTypeId();
     ClusterRoutingProtocol();
     ~ClusterRoutingProtocol();
@@ -35,6 +38,28 @@ namespace ns3
                            Time::Unit unit = Time::S) const override;
 
   private:
+    Time m_helloInterval;
+
+    Timer m_helloTimer;
+
+    void HelloTimerExpire();
+
+    void SendHello();
+
+    void RecieveMsg(Ptr<Socket> socket);
+    
+    // sockets
+    Ptr<Socket> m_recvSocket;
+    Ptr<Socket> m_sendSocket;
+
+  private:
+    // required variables
+    Ptr<Ipv4> m_ipv4;
+    Ipv4Address m_mainAddress;
+
+  protected:
+    void DoInitialize() override;
+    void DoDispose() override;
   };
 } // namespace ns3
 
