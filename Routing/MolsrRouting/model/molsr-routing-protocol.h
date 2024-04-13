@@ -63,13 +63,15 @@ namespace ns3
       Ipv4Address nextAddr; //!< Address of the next hop.
       uint32_t interface;   //!< Interface index
       uint32_t distance;    //!< Distance in hops to the destination.
+      MessageHeader::NodeType nextHopType;
 
       RoutingTableEntry()
           : // default values
             destAddr(),
             nextAddr(),
             interface(0),
-            distance(0)
+            distance(0),
+            nextHopType(MessageHeader::NodeType::None)
       {
       }
     };
@@ -137,6 +139,8 @@ namespace ns3
        * \return the set of neighbors discovered by OLSR
        */
       const NeighborSet &GetNeighbors() const;
+
+      const MessageHeader::NodeType GetNeighborNodeType(Ipv4Address iface_addr) const;
 
       /**
        * Get the two hop neighbors.
@@ -297,7 +301,8 @@ namespace ns3
       void AddEntry(const Ipv4Address &dest,
                     const Ipv4Address &next,
                     uint32_t interface,
-                    uint32_t distance);
+                    uint32_t distance,
+                    MessageHeader::NodeType nextHopType);
       /**
        * \brief Adds a new entry into the routing table.
        *
@@ -311,7 +316,7 @@ namespace ns3
       void AddEntry(const Ipv4Address &dest,
                     const Ipv4Address &next,
                     const Ipv4Address &interfaceAddress,
-                    uint32_t distance);
+                    uint32_t distance, MessageHeader::NodeType nextHopType);
 
       /**
        * \brief Looks up an entry for the specified destination address.

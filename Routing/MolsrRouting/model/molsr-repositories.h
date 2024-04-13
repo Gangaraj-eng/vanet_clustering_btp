@@ -24,6 +24,7 @@
 
 #include "ns3/ipv4-address.h"
 #include "ns3/nstime.h"
+#include "molsr-header.h"
 
 #include <set>
 #include <vector>
@@ -32,6 +33,7 @@ namespace ns3
 {
     namespace molsr
     {
+
 
         /// \ingroup olsr
         /// An Interface Association Tuple.
@@ -96,7 +98,7 @@ namespace ns3
         {
             /// Main address of a neighbor node.
             Ipv4Address neighborMainAddr;
-
+            MessageHeader::NodeType neighborNodeType;
             /// Status of the link (Symmetric or not Symmetric).
             enum Status
             {
@@ -116,7 +118,7 @@ namespace ns3
         operator==(const NeighborTuple &a, const NeighborTuple &b)
         {
             return (a.neighborMainAddr == b.neighborMainAddr && a.status == b.status &&
-                    a.willingness == b.willingness);
+                    a.willingness == b.willingness and a.neighborNodeType == b.neighborNodeType);
         }
 
         static inline std::ostream &

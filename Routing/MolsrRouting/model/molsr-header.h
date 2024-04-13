@@ -162,6 +162,7 @@ class MessageHeader : public Header
      * Message type
      */
     enum NodeType{
+        None=0, // default is none
         CH=1,
         UAV=2,
         RSU=3

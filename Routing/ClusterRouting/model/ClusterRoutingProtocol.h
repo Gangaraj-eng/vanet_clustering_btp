@@ -5,6 +5,7 @@
 #include "ns3/ipv4-interface.h"
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/ipv4-routing-protocol.h"
+#include "ns3/ipv4-static-routing.h"
 #include "ns3/node.h"
 #include "ns3/timer.h"
 #include "ns3/nstime.h"
@@ -37,6 +38,10 @@ namespace ns3
     void PrintRoutingTable(Ptr<OutputStreamWrapper> stream,
                            Time::Unit unit = Time::S) const override;
 
+
+  public:
+  bool IsMyOwnAddress(Ipv4Address addr);
+
   private:
     Time m_helloInterval;
 
@@ -47,10 +52,10 @@ namespace ns3
     void SendHello();
 
     void RecieveMsg(Ptr<Socket> socket);
-    
+
     // sockets
+    std::map<Ptr<Socket>, Ipv4InterfaceAddress> m_sendSockets;
     Ptr<Socket> m_recvSocket;
-    Ptr<Socket> m_sendSocket;
 
   private:
     // required variables

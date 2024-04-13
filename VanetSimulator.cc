@@ -145,10 +145,10 @@ void VanetSimulator::InstallInternetStack()
 {
   ClusterRoutingHelper crhelper;
   MolsrHelper mhelper;
-  // LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
+  LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
   LogComponentEnable("MolsrRoutingProtocol",LOG_LEVEL_ERROR);
   InternetStackHelper stack;
-  stack.SetRoutingHelper(mhelper);
+  stack.SetRoutingHelper(crhelper);
   stack.Install(vanetNodes);
   Ipv4AddressHelper address;
   address.SetBase("10.0.0.0", "255.0.0.0");
