@@ -28,6 +28,7 @@ namespace ns3
   ClusterRoutingProtocol::ClusterRoutingProtocol()
       : m_helloTimer(Timer::CANCEL_ON_DESTROY)
   {
+    m_mainInterface = 1;
   }
 
   TypeId ClusterRoutingProtocol::GetTypeId()
@@ -115,26 +116,34 @@ namespace ns3
   void ClusterRoutingProtocol::SendHello()
   {
     Ptr<Packet> packet = Create<Packet>();
-
     Ipv4Address destination = Ipv4Address("10.255.255.255");
-
-    for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator i =
-             m_sendSockets.begin();
-         i != m_sendSockets.end(); i++)
-    {
-      i->first->SendTo(packet, 0, InetSocketAddress(destination, CLUSTER_ROUTING_PORT_NUMBER));
-    }
+    m_sendSocket->SendTo(packet, 0, InetSocketAddress(destination, CLUSTER_ROUTING_PORT_NUMBER));
   }
 
   void ClusterRoutingProtocol::RecieveMsg(Ptr<Socket> socket)
   {
-    NS_LOG_INFO("Packet recieved on " << m_mainAddress);
+    Ipv4PacketInfoTag interfaceInfo;
+    Ptr<Packet> receivedPacket;
+    Address sourceAddress;
+    receivedPacket = socket->RecvFrom(sourceAddress);
+    if (!receivedPacket->RemovePacketTag(interfaceInfo))
+    {
+      NS_ABORT_MSG("No incoming interface on OLSR message, aborting.");
+    }
+    uint32_t incomingIf = interfaceInfo.GetRecvIf();
+    Ptr<Node> node = this->GetObject<Node>();
+    Ptr<NetDevice> dev = node->GetDevice(incomingIf);
+    // uint32_t recvInterfaceIndex = m_ipv4->GetInterfaceForDevice(dev);
+
+    InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom(sourceAddress);
+    Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4();
+    NS_LOG_INFO("Packet recieved on " << m_mainAddress << " from " << senderIfaceAddr);
   }
 
   void ClusterRoutingProtocol::HelloTimerExpire()
   {
     SendHello();
-    // m_helloTimer.Schedule(m_helloInterval);
+    m_helloTimer.Schedule(m_helloInterval);
   }
 
   void ClusterRoutingProtocol::DoInitialize()
@@ -142,68 +151,57 @@ namespace ns3
     // NS_LOG_INFO(m_ipv4->GetAddress(1,0));
     if (m_mainAddress == Ipv4Address())
     {
-      Ipv4Address loopback("127.0.0.1");
-      for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++)
-      {
-        Ipv4Address addr = m_ipv4->GetAddress(i, 0).GetLocal();
-        if (addr != loopback)
-        {
-          m_mainAddress = addr;
-          TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
-          Ptr<Node> theNode = GetObject<Node>();
-          Ptr<Socket> socket = Socket::CreateSocket(theNode, tid);
-          InetSocketAddress inetAddr(addr, CLUSTER_ROUTING_PORT_NUMBER);
-          socket->SetAllowBroadcast(true);
-          socket->SetIpTtl(1);
-          socket->BindToNetDevice(m_ipv4->GetNetDevice(i));
-          if (socket->Bind(inetAddr))
-          {
-            NS_LOG_INFO("Failed to bind() MASP socket");
-          }
-          socket->SetRecvPktInfo(true);
-          m_sendSockets[socket] = m_ipv4->GetAddress(i, 0);
-          break;
-        }
-      }
-      if (!m_recvSocket)
-      {
-        TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
-        Ptr<Node> theNode = GetObject<Node>();
-        m_recvSocket = Socket::CreateSocket(theNode, tid);
-        InetSocketAddress local(m_ipv4->GetAddress(1,0).GetBroadcast(), CLUSTER_ROUTING_PORT_NUMBER);
-        m_recvSocket->SetAllowBroadcast(true);
-        m_recvSocket->SetRecvCallback(MakeCallback(&ClusterRoutingProtocol::RecieveMsg, this));
-        if (m_recvSocket->Bind(local))
-        {
-          NS_LOG_INFO("Failed to bind() MASP Recvsocket");
-        }
-        m_recvSocket->SetRecvPktInfo(true);
-        m_recvSocket->ShutdownSend();
-      }
-      HelloTimerExpire();
+      m_mainAddress = m_ipv4->GetAddress(m_mainInterface, 0).GetLocal();
     }
+    TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
+    Ptr<Node> theNode = GetObject<Node>();
+
+    if (!m_sendSocket)
+    {
+      m_sendSocket = Socket::CreateSocket(theNode, tid);
+      InetSocketAddress inetAddr(m_mainAddress, CLUSTER_ROUTING_PORT_NUMBER);
+      m_sendSocket->SetAllowBroadcast(true);
+      if (m_sendSocket->Bind(inetAddr))
+      {
+        NS_LOG_INFO("Failed to bind() MASP socket");
+      }
+      m_sendSocket->BindToNetDevice(m_ipv4->GetNetDevice(m_mainInterface));
+      m_sendSocket->SetRecvPktInfo(true);
+    }
+
+    if (!m_recvSocket)
+    {
+      m_recvSocket = Socket::CreateSocket(theNode, tid);
+      InetSocketAddress local(m_ipv4->GetAddress(1, 0).GetBroadcast(), CLUSTER_ROUTING_PORT_NUMBER);
+      m_recvSocket->SetAllowBroadcast(true);
+      if (m_recvSocket->Bind(local))
+      {
+        NS_LOG_INFO("Failed to bind() MASP Recvsocket");
+      }
+      m_recvSocket->SetRecvCallback(MakeCallback(&ClusterRoutingProtocol::RecieveMsg, this));
+      m_recvSocket->SetRecvPktInfo(true);
+      m_recvSocket->ShutdownSend();
+    }
+
+    HelloTimerExpire();
   }
 
   bool ClusterRoutingProtocol::IsMyOwnAddress(Ipv4Address addr)
   {
-    std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator j;
-    for (j = m_sendSockets.begin(); j != m_sendSockets.end(); ++j)
-    {
-      Ipv4InterfaceAddress iface = j->second;
-      if (addr == iface.GetLocal())
-      {
-        return true;
-      }
-    }
-    return false;
+    return addr == m_ipv4->GetAddress(m_mainInterface, 0).GetLocal();
   }
 
   void ClusterRoutingProtocol::DoDispose()
   {
     if (m_recvSocket)
       m_recvSocket->Close();
-    for (auto &i : m_sendSockets)
-      i.first->Close();
+    if (m_sendSocket)
+      m_sendSocket->Close();
+  }
+
+  void ClusterRoutingProtocol::SetMainInterface(uint32_t interface)
+  {
+    m_mainAddress = m_ipv4->GetAddress(interface, 0).GetLocal();
   }
 
 } // namespace ns3

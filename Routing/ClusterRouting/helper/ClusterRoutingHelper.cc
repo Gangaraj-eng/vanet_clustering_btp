@@ -20,6 +20,10 @@ namespace ns3
   {
     Ptr<ClusterRoutingProtocol> agent = m_agentFactory.Create<ClusterRoutingProtocol>();
     node->AggregateObject(agent);
+    auto it=m_interfaceMaps.find(node);
+    if(it!=m_interfaceMaps.end()){
+      agent->SetMainInterface(it->second);
+    }
     return agent;
   }
 
@@ -28,9 +32,14 @@ namespace ns3
     m_agentFactory.Set(name, value);
   }
 
+  void ClusterRoutingHelper::SetMainInterface(Ptr<Node> node, uint32_t interface)
+  {
+    m_interfaceMaps[node]=interface;
+  }
+
   // TODO: Complete this function
   int64_t ClusterRoutingHelper::AssignStreams(NodeContainer c, int64_t stream)
   {
-      return 0;
+    return 0;
   }
 };

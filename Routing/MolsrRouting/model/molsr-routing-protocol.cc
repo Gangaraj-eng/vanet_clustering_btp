@@ -1020,7 +1020,7 @@ namespace ns3
                             AddEntry(link_tuple.neighborIfaceAddr,
                                      link_tuple.neighborIfaceAddr,
                                      link_tuple.localIfaceAddr,
-                                     1,nb_tuple.neighborNodeType);
+                                     1, nb_tuple.neighborNodeType);
                             if (link_tuple.neighborIfaceAddr == nb_tuple.neighborMainAddr)
                             {
                                 nb_main_addr = true;
@@ -1049,7 +1049,7 @@ namespace ns3
                     {
                         NS_LOG_LOGIC("no R_dest_addr is equal to the main address of the neighbor "
                                      "=> adding additional routing entry");
-                        AddEntry(nb_tuple.neighborMainAddr, lt->neighborIfaceAddr, lt->localIfaceAddr, 1,nb_tuple.neighborNodeType);
+                        AddEntry(nb_tuple.neighborMainAddr, lt->neighborIfaceAddr, lt->localIfaceAddr, 1, nb_tuple.neighborNodeType);
                     }
                 }
             }
@@ -1121,7 +1121,7 @@ namespace ns3
                 if (foundEntry)
                 {
                     NS_LOG_LOGIC("Adding routing entry for two-hop neighbor.");
-                    AddEntry(nb2hop_tuple.twoHopNeighborAddr, entry.nextAddr, entry.interface,2, GetNeighborNodeType(entry.nextAddr));
+                    AddEntry(nb2hop_tuple.twoHopNeighborAddr, entry.nextAddr, entry.interface, 2, GetNeighborNodeType(entry.nextAddr));
                 }
                 else
                 {
@@ -1166,7 +1166,7 @@ namespace ns3
                         AddEntry(topology_tuple.destAddr,
                                  lastAddrEntry.nextAddr,
                                  lastAddrEntry.interface,
-                                 h + 1,GetNeighborNodeType(lastAddrEntry.nextAddr));
+                                 h + 1, GetNeighborNodeType(lastAddrEntry.nextAddr));
                         added = true;
                     }
                     else
@@ -1206,7 +1206,7 @@ namespace ns3
                     //       R_next_addr  =  R_next_addr  (of the recorded route entry)
                     //       R_dist       =  R_dist       (of the recorded route entry)
                     //       R_iface_addr =  R_iface_addr (of the recorded route entry).
-                    AddEntry(tuple.ifaceAddr, entry1.nextAddr, entry1.interface, entry1.distance,GetNeighborNodeType(entry1.nextAddr));
+                    AddEntry(tuple.ifaceAddr, entry1.nextAddr, entry1.interface, entry1.distance, GetNeighborNodeType(entry1.nextAddr));
                 }
             }
 
@@ -1305,7 +1305,7 @@ namespace ns3
             const molsr::MessageHeader::Hello &hello = msg.GetHello();
 
             LinkSensing(msg, hello, receiverIface, senderIface);
-            
+
 #ifdef NS3_LOG_ENABLE
             {
                 const LinkSet &links = m_state.GetLinks();
@@ -2923,7 +2923,6 @@ molsr::mac_failed(Ptr<Packet> p)
             NS_LOG_FUNCTION(this << " " << m_ipv4->GetObject<Node>()->GetId() << " "
                                  << header.GetDestination() << " " << oif);
             Ptr<Ipv4Route> rtentry;
-            return rtentry;
             RoutingTableEntry entry1;
             RoutingTableEntry entry2;
             bool found = false;
@@ -3012,7 +3011,7 @@ molsr::mac_failed(Ptr<Packet> p)
                                     LocalDeliverCallback lcb,
                                     ErrorCallback ecb)
         {
-           
+
             NS_LOG_FUNCTION(this << " " << m_ipv4->GetObject<Node>()->GetId() << " "
                                  << header.GetDestination());
 
@@ -3179,13 +3178,13 @@ molsr::mac_failed(Ptr<Packet> p)
                 {
                     if (m_ipv4->GetAddress(i, j).GetLocal() == interfaceAddress)
                     {
-                        AddEntry(dest, next, i, distance,nextHopType);
+                        AddEntry(dest, next, i, distance, nextHopType);
                         return;
                     }
                 }
             }
             NS_ASSERT(false); // should not be reached
-            AddEntry(dest, next, 0, distance,nextHopType);
+            AddEntry(dest, next, 0, distance, nextHopType);
         }
 
         std::vector<RoutingTableEntry>
@@ -3219,16 +3218,19 @@ molsr::mac_failed(Ptr<Packet> p)
             return m_state.GetNeighbors();
         }
 
-        const MessageHeader::NodeType RoutingProtocol::GetNeighborNodeType(Ipv4Address iface_addr) const{
+        const MessageHeader::NodeType RoutingProtocol::GetNeighborNodeType(Ipv4Address iface_addr) const
+        {
             const NeighborSet nset = m_state.GetNeighbors();
-           Ipv4Address neighborMainAddr = GetMainAddress(iface_addr);
-           for(auto i=nset.begin();i!=nset.end();i++){
-            if(i->neighborMainAddr == neighborMainAddr){
-                return i->neighborNodeType;
+            Ipv4Address neighborMainAddr = GetMainAddress(iface_addr);
+            for (auto i = nset.begin(); i != nset.end(); i++)
+            {
+                if (i->neighborMainAddr == neighborMainAddr)
+                {
+                    return i->neighborNodeType;
+                }
             }
-           }
-           NS_LOG_ERROR("Neighbor main address not foudn in neighbor set");
-           return MessageHeader::NodeType::None;
+            NS_LOG_ERROR("Neighbor main address not foudn in neighbor set");
+            return MessageHeader::NodeType::None;
         }
 
         const TwoHopNeighborSet &

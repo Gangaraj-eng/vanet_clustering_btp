@@ -46,7 +46,7 @@ int main()
 
 VanetSimulator::VanetSimulator()
 {
-  nNodes = 3;
+  nNodes = 10;
   simulationTime = 30; // 30 seconds
 }
 
@@ -104,7 +104,7 @@ void VanetSimulator::InstallMobilityModel()
   std::stringstream ssSpeed;
   ssSpeed << "ns3::UniformRandomVariable[Min=0.0|Max=" << 50 << "]";
   std::stringstream ssPause;
-  ssPause << "ns3::ConstantRandomVariable[Constant=" << 0 << "]";
+  ssPause << "ns3::ConstantRandomVariable[Constant=" << 10 << "]";
   mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel",
                             "Speed",
                             StringValue(ssSpeed.str()),

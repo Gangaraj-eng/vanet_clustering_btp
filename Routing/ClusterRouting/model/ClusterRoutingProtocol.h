@@ -38,9 +38,8 @@ namespace ns3
     void PrintRoutingTable(Ptr<OutputStreamWrapper> stream,
                            Time::Unit unit = Time::S) const override;
 
-
   public:
-  bool IsMyOwnAddress(Ipv4Address addr);
+    bool IsMyOwnAddress(Ipv4Address addr);
 
   private:
     Time m_helloInterval;
@@ -54,7 +53,8 @@ namespace ns3
     void RecieveMsg(Ptr<Socket> socket);
 
     // sockets
-    std::map<Ptr<Socket>, Ipv4InterfaceAddress> m_sendSockets;
+    // one for recieving and one for sending
+    Ptr<Socket> m_sendSocket;
     Ptr<Socket> m_recvSocket;
 
   private:
@@ -62,9 +62,15 @@ namespace ns3
     Ptr<Ipv4> m_ipv4;
     Ipv4Address m_mainAddress;
 
+    // interface on which this protocol runs
+    uint32_t m_mainInterface = 1;
+
   protected:
     void DoInitialize() override;
     void DoDispose() override;
+
+  public:
+    void SetMainInterface(uint32_t interface);
   };
 } // namespace ns3
 

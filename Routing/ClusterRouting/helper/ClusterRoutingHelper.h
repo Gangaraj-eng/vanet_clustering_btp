@@ -17,11 +17,14 @@ namespace ns3
     ClusterRoutingHelper *Copy() const override;
     int64_t AssignStreams(NodeContainer c, int64_t stream);
     void Set(std::string name, const AttributeValue &value);
-
+    void SetMainInterface(Ptr<Node> node, uint32_t interface);
   private:
     // Factory to create ClusterRouting object
     // can also be used to set attributes
     ObjectFactory m_agentFactory;
+
+    // map of node to its corresponding interface that will be used
+    std::map<Ptr<Node>, uint32_t> m_interfaceMaps;
   };
 }
 
