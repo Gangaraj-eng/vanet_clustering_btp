@@ -8,6 +8,11 @@ namespace ns3
 {
     class RSUNode : public Node
     {
+    private:
+        // map storing reputations of each node in VANET
+        // key is node number or ID
+        std::map<int, double> nodeReputations;
+
     public:
         RSUNode();
     };

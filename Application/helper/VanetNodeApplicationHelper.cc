@@ -5,6 +5,7 @@
 
 namespace ns3
 {
+
   VanetNodeApplicationHelper::VanetNodeApplicationHelper()
   {
     m_factory.SetTypeId("ns3::VanetNodeApplication");

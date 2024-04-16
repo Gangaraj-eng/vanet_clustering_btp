@@ -9,6 +9,7 @@
 #include "ns3/ClusterRoutingHelper.h"
 #include "ns3/VanetNodeApplicationHelper.h"
 #include "ns3/molsr-helper.h"
+#include "ns3/UADCConstants.h"
 
 using namespace ns3;
 
@@ -26,6 +27,7 @@ private:
   NetDeviceContainer devices;
   double simulationTime; // in seconds
   Ipv4InterfaceContainer interfaces;
+  SimulationParamters mParameters;
 
 private:
   void CreateNodes();
@@ -46,8 +48,8 @@ int main()
 
 VanetSimulator::VanetSimulator()
 {
-  nNodes = 10;
-  simulationTime = 30; // 30 seconds
+  nNodes = mParameters.numVanetNodes;
+  simulationTime = mParameters.TotalSimulationTime;
 }
 
 void VanetSimulator::Run()
@@ -67,17 +69,20 @@ void VanetSimulator::Run()
   Simulator::Destroy();
 }
 
-void VanetSimulator::ConfigureAnimation(AnimationInterface &anim){
-    int imgId = anim.AddResource("/home/raju1234/Downloads/v3.png");
-    for(int i=0;i<nNodes;i++){
-      anim.UpdateNodeImage(vanetNodes.Get(i)->GetId(),imgId);
-      anim.UpdateNodeSize(vanetNodes.Get(i)->GetId(),50,50);
-    }
+void VanetSimulator::ConfigureAnimation(AnimationInterface &anim)
+{
+  int vehicleNodeIconId = anim.AddResource(VANETNODE_ICON_PATH);
+  // int rsuNodeIconId = anim.AddResource(RSU_ICON_PATH);
+  // int uavNodeIconId = anim.AddResource(UAV_ICON_PATH);
+  for (int i = 0; i < nNodes; i++)
+  {
+    anim.UpdateNodeImage(vanetNodes.Get(i)->GetId(), vehicleNodeIconId);
+    anim.UpdateNodeSize(vanetNodes.Get(i)->GetId(), 35, 35);
+  }
 }
 
 void VanetSimulator::CreateNodes()
 {
-
   // Create nodes and name them
   for (int i = 0; i < nNodes; i++)
   {
@@ -92,19 +97,20 @@ void VanetSimulator::InstallMobilityModel()
 {
   MobilityHelper mobility;
   ObjectFactory pos;
-  pos.SetTypeId("ns3::RandomDiscPositionAllocator");
-  // X and Y are centers
-  pos.Set("X", StringValue("100.0"));
-  pos.Set("Y", StringValue("100.0"));
-  // Rho is the radius
-  pos.Set("Rho", StringValue("ns3::UniformRandomVariable[Min=0|Max=100]"));
+  pos.SetTypeId("ns3::RandomBoxPositionAllocator");
+  std::stringstream ssDimX;
+  ssDimX<<"ns3::UniformRandomVariable[Min=0.0|Max="<<mParameters.simulationDimension<<"]";
+  pos.Set("X", StringValue(ssDimX.str()));
+  pos.Set("Y", StringValue(ssDimX.str()));
+  // we need antenna height uniform [1.0 .. 2.0] for loss model
+  // pos.Set("Z", StringValue("ns3::UniformRandomVariable[Min=1.0|Max=2.0]"));
 
   Ptr<PositionAllocator> positionAllocator = pos.Create()->GetObject<PositionAllocator>();
   mobility.SetPositionAllocator(positionAllocator);
   std::stringstream ssSpeed;
-  ssSpeed << "ns3::UniformRandomVariable[Min=0.0|Max=" << 50 << "]";
+  ssSpeed << "ns3::UniformRandomVariable[Min=0.0|Max=" << 30 << "]";
   std::stringstream ssPause;
-  ssPause << "ns3::ConstantRandomVariable[Constant=" << 10 << "]";
+  ssPause << "ns3::ConstantRandomVariable[Constant=" << 5 << "]";
   mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel",
                             "Speed",
                             StringValue(ssSpeed.str()),
@@ -131,6 +137,8 @@ void VanetSimulator::CreateDevices()
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
   wifiPhy.SetChannel(wifiChannel.Create());
 
+  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(mParameters.VanetNodeRange)));
+  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(mParameters.VanetNodeRange)));
   WifiHelper wifi;
   wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
                                "DataMode",
@@ -146,9 +154,11 @@ void VanetSimulator::InstallInternetStack()
   ClusterRoutingHelper crhelper;
   MolsrHelper mhelper;
   LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
-  LogComponentEnable("MolsrRoutingProtocol",LOG_LEVEL_ERROR);
+  LogComponentEnable("ClusterPacketHeader", LOG_LEVEL_INFO);
+  LogComponentEnable("MolsrRoutingProtocol", LOG_LEVEL_ERROR);
   InternetStackHelper stack;
   stack.SetRoutingHelper(crhelper);
+  // stack.SetRoutingHelper(mhelper);
   stack.Install(vanetNodes);
   Ipv4AddressHelper address;
   address.SetBase("10.0.0.0", "255.0.0.0");

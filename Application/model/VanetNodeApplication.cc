@@ -40,8 +40,7 @@ namespace ns3
 
   void VanetNodeApplication::sendPacket(){
        Ptr<Packet> packet=Create<Packet>(32);
-       int i=m_sendSocket->SendTo(packet,0,InetSocketAddress("10.0.0.2",12345));
-    
+            
   }
 
   // application methods

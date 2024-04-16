@@ -3,6 +3,9 @@ U - Number of UAVs  (Nodes in FANET)
 V - Number of Vehicles (Nodes in VANET)
 R - Number of RSUs (Road side units)
 
+Name of the routing protocol: UADC in VANETs
+Uav - Assisted Dynamic Clustering in Vehicular Ad-hoc Network
+
 Routing protocols:
 1 - InterClusterRouting - Modified OLSR routing happening between CHs(Cluster Head) and UAVs
 2 - IntraClusterRouting - Any simple routing between the members of a cluster 

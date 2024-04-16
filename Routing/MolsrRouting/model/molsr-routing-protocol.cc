@@ -411,9 +411,9 @@ namespace ns3
             if (canRunOlsr)
             {
                 HelloTimerExpire();
-                TcTimerExpire();
-                MidTimerExpire();
-                HnaTimerExpire();
+                // TcTimerExpire();
+                // MidTimerExpire();
+                // HnaTimerExpire();
 
                 NS_LOG_DEBUG("OLSR on node " << m_mainAddress << " started");
             }
@@ -436,7 +436,8 @@ namespace ns3
         void
         RoutingProtocol::RecvOlsr(Ptr<Socket> socket)
         {
-            NS_LOG_ERROR("Reciver called");
+            NS_LOG_ERROR("Reciver called " << Simulator::Now());
+            return;
             Ptr<Packet> receivedPacket;
             Address sourceAddress;
             receivedPacket = socket->RecvFrom(sourceAddress);
@@ -603,7 +604,6 @@ namespace ns3
 
             // After processing all OLSR messages, we must recompute the routing table
             RoutingTableComputation();
-            auto entries = GetRoutingTableEntries();
         }
 
         ///
@@ -2173,6 +2173,7 @@ namespace ns3
             if (nb_tuple != nullptr)
             {
                 nb_tuple->willingness = hello.willingness;
+                nb_tuple->neighborNodeType = msg.GetMessageNodeType();
             }
         }
 
