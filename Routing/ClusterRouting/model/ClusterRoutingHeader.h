@@ -45,7 +45,6 @@ namespace ns3
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |   Cluster Index     |   Cluster Node Id   |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
   */
   class ClusterMessageHeader : public Header
   {
@@ -88,11 +87,30 @@ namespace ns3
     // CHs will transfer between each other
     struct ClusterAdvertisement
     {
+      // If cluster Id is its own
+      uint32_t clusterId;
+
+      // get populated while sending
+      std::vector<Ipv4Address> clusterMembers;
+
+      // serialization and printing
+      void Print(std::ostream &os) const;
+      uint32_t GetSerializedSize() const;
+      void Serialize(Buffer::Iterator start) const;
+      uint32_t Deserialize(Buffer::Iterator start, uint32_t messageSize);
     };
 
     // Toggling of CH Request
     // CH Sends to all  its CMs
     struct CH_Toggle_Initialize
+    {
+      void Print(std::ostream &os) const;
+      uint32_t GetSerializedSize() const;
+      void Serialize(Buffer::Iterator start) const;
+      uint32_t Deserialize(Buffer::Iterator start, uint32_t messageSize);
+    };
+
+    struct CH_Transfer_Data
     {
     };
 
@@ -100,28 +118,103 @@ namespace ns3
     // indicating their willingness to participate
     struct CH_Toggle_Participation
     {
+      int coins;
+      double energyLeft;
+
+      void Print(std::ostream &os) const;
+      uint32_t GetSerializedSize() const;
+      void Serialize(Buffer::Iterator start) const;
+      uint32_t Deserialize(Buffer::Iterator start, uint32_t messageSize);
     };
 
     struct CH_Change_Advertisement
     {
+      int newClusterId;
+      Ipv4Address newClusterAddr;
+
+      void Print(std::ostream &os) const;
+      uint32_t GetSerializedSize() const;
+      void Serialize(Buffer::Iterator start) const;
+      uint32_t Deserialize(Buffer::Iterator start, uint32_t messageSize);
     };
 
   private:
     struct
     {
       Hello hello;
+      ClusterAdvertisement clusterAdvertisement;
+      CH_Toggle_Initialize chToggleInitialize;
+      CH_Toggle_Participation chToggleParticipation;
+      CH_Change_Advertisement chChangeAdvertisement;
+      CH_Transfer_Data chTransferData;
     } m_message;
 
   public:
     // Getters and Setters
     void SetHello(Hello hello)
     {
+      this->m_messageType = ClusterMessageType::HELLO_MESSAGE;
       this->m_message.hello = hello;
+    }
+
+    void SetClusterAdvertisement(ClusterAdvertisement cadv)
+    {
+      this->m_messageType = ClusterMessageType::CLUSTER_ADVERTISEMENT;
+      this->m_message.clusterAdvertisement = cadv;
+    }
+
+    void SetChToggleInitialize(CH_Toggle_Initialize chtz)
+    {
+      this->m_messageType = ClusterMessageType::CH_TOGGLE_INITIALIZE;
+      this->m_message.chToggleInitialize = chtz;
+    }
+
+    void SetChToggleParticipation(CH_Toggle_Participation ctp)
+    {
+      this->m_messageType = ClusterMessageType::CH_TOGGLE_PARTICIPATION;
+      this->m_message.chToggleParticipation = ctp;
+    }
+
+    void SetChTransferData(CH_Transfer_Data ctd)
+    {
+      this->m_messageType = ClusterMessageType::CH_TRANSFER_DATA;
+      this->m_message.chTransferData = ctd;
+    }
+
+    void SetChChangeAdvertisement(CH_Change_Advertisement ccadv)
+    {
+      this->m_messageType = ClusterMessageType::CH_CHANGE_ADVERTISEMENT;
+      this->m_message.chChangeAdvertisement = ccadv;
     }
 
     Hello GetHello() const
     {
       return this->m_message.hello;
+    }
+
+    ClusterAdvertisement GetClusterAdvertisement() const
+    {
+      return this->m_message.clusterAdvertisement;
+    }
+
+    CH_Toggle_Initialize GetChToggleInitialize() const
+    {
+      return m_message.chToggleInitialize;
+    }
+
+    CH_Toggle_Participation GetChToggleParticipation() const
+    {
+      return m_message.chToggleParticipation;
+    }
+
+    CH_Transfer_Data GetChTransferData() const
+    {
+      return m_message.chTransferData;
+    }
+
+    CH_Change_Advertisement GetChChangeAdvertisement() const
+    {
+      return m_message.chChangeAdvertisement;
     }
 
     ClusterMessageType

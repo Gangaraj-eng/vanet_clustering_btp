@@ -14,7 +14,6 @@
 #include "ns3/random-variable-stream.h"
 #include "ns3/event-garbage-collector.h"
 
-
 namespace ns3
 {
   class ClusterRoutingProtocol : public Ipv4RoutingProtocol
@@ -58,8 +57,12 @@ namespace ns3
     EventGarbageCollector m_events;
 
     // sending functions
+    void SendPacket(Ptr<Packet> packet);
     void SendHello();
-
+    void SendClusterAdvertisement();
+    void SendClusterToggleInitiateRequest();
+    void SendClusterToggleParticipation();
+    void SendChChangeAdvertisement(Ptr<Packet> packet);
     void RecieveMsg(Ptr<Socket> socket);
 
     // sockets
@@ -72,20 +75,34 @@ namespace ns3
 
     // Times
     Time m_helloInterval;
-    Time m_initialClusteringTime; // time after which initial clustering happens
+    Time m_clusterAdvertisementInterval; // time interval between cluster advertisements
+    Time m_chToggleIntiateWaitTime;
+
 
     // Timers
     Timer m_helloTimer;
+    Timer m_clusterAdvertisementTimer;
+    Timer m_clusterToggleInitiateTimer;
+    Timer m_evaluateNewClusterTimer;
+    Timer m_sendClsuterToggleParticipation;
 
     // Timer functions
     void HelloTimerExpire();
     void NeighborTimerExpire(Ipv4Address neighborIfaceAddr);
+    void ClusterAdvertisementTimerExpire();
+    void EvaluateNewCluster();
 
     // process incoming messages
     void ProcessHello(ClusterMessageHeader message, Ipv4Address recievedIfaceAddress, Ipv4Address senderIfaceAddress);
+    void ProcessClusterAdvertisement(ClusterMessageHeader message);
+    void ProcessClusterToggleInitiate(ClusterMessageHeader message);
+    void ProcessClusterToggleParticipation(ClusterMessageHeader message);
+    void ProcessChChangeAdvertisement(ClusterMessageHeader message);
+
 
     uint16_t GetMessageSequenceNumber();
     bool IsMyOwnAddress(Ipv4Address addr);
+    void PopulateMessageHeader(ClusterMessageHeader &msg);
 
   public:
     void SetMainInterface(uint32_t interface);

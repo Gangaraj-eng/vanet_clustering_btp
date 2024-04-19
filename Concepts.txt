@@ -26,3 +26,8 @@ followed from the example of AODV
 Mobility Model:
 To keep track of current position and velocity of a Node
 Position co-ordiantes and velocity are in m and m/s units
+
+
+Final Combined Protocol:
+A final protocol having three protocol objects inside it
+It will ask the methods from three routing protocols to decide which one to use

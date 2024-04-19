@@ -86,9 +86,11 @@ void VanetSimulator::CreateNodes()
   // Create nodes and name them
   for (int i = 0; i < nNodes; i++)
   {
-    vanetNodes.Add(CreateObject<VanetNode>());
-    std::string nodeId = "vnode" + std::to_string(i + 1);
-    Names::Add(nodeId, vanetNodes.Get(i));
+    Ptr<VanetNode> node = CreateObject<VanetNode>();
+    node->SetNodeId(i);
+    // std::string nodeId = "vnode" + std::to_string(i + 1);
+    // Names::Add(nodeId, vanetNodes.Get(i));
+    vanetNodes.Add(node);
   }
   InstallMobilityModel();
 }
@@ -99,7 +101,7 @@ void VanetSimulator::InstallMobilityModel()
   ObjectFactory pos;
   pos.SetTypeId("ns3::RandomBoxPositionAllocator");
   std::stringstream ssDimX;
-  ssDimX<<"ns3::UniformRandomVariable[Min=0.0|Max="<<mParameters.simulationDimension<<"]";
+  ssDimX << "ns3::UniformRandomVariable[Min=0.0|Max=" << mParameters.simulationDimension << "]";
   pos.Set("X", StringValue(ssDimX.str()));
   pos.Set("Y", StringValue(ssDimX.str()));
   // we need antenna height uniform [1.0 .. 2.0] for loss model

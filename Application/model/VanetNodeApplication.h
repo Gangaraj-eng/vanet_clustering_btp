@@ -4,6 +4,7 @@
 
 #include "ns3/application.h"
 #include "ns3/socket-factory.h"
+#include "ns3/VanetNode.h"
 
 namespace ns3
 {
@@ -17,11 +18,15 @@ namespace ns3
   private:
     void StartApplication() override;
     void StopApplication() override;
+    void SendPacket(Ptr<Packet> packet, Ipv4Address destination,uint16_t port);
     void RecieveMessage(Ptr<Socket> socket);
-    void sendPacket();
+    bool IsNodeClusterHead();
+
   protected:
+     // sockets to send and recieve sockets
      Ptr<Socket> m_sendSocket;
-     Ptr<Socket> m_recSocket;
+     Ptr<Socket> m_recvSocket;
+     Ptr<VanetNode> m_node;
   };
 } // namespace ns3
 

@@ -26,16 +26,28 @@ namespace ns3
 
   struct ClusterMemberEntry
   {
-      Ipv4Address memberAddress;
-      double Reputation;
+    Ipv4Address memberAddress;
+    double Reputation; // reputation of the cluster node
+    Vector position;
+    Vector velocity;
   };
 
+  struct ClusterTogglePariticpant
+  {
+    Ipv4Address memberAdr;
+    double Reputation;
+    Vector position;
+    Vector velocity;
+    int coins;
+    int nodeId;
+    double EnergyLeft;
+  };
 
   // type defines
   // Neighbor list
   typedef std::vector<NeighborEntry> NeighborList;
   typedef std::vector<ClusterMemberEntry> ClusterMembers;
-
+  typedef std::vector<ClusterTogglePariticpant> clusterTogglePariticipants;
   // comparision and printing overloads
 
 } // namespace ns3

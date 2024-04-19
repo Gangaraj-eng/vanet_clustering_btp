@@ -5,6 +5,7 @@
 #define CR_PKT_HEADER_SIZE 4
 #define CR_MSG_HEADER_SIZE 16
 #define IPV4_ADDRESS_SIZE 4
+#define VECTOR_SIZE 24
 
 namespace ns3
 {
@@ -96,9 +97,21 @@ namespace ns3
     switch (m_messageType)
     {
     case ClusterMessageType::HELLO_MESSAGE:
-      size+=m_message.hello.GetSerializedSize();
+      size += m_message.hello.GetSerializedSize();
       break;
-    
+    case ClusterMessageType::CLUSTER_ADVERTISEMENT:
+      size += m_message.clusterAdvertisement.GetSerializedSize();
+      break;
+    case ClusterMessageType::CH_TOGGLE_INITIALIZE:
+      size += m_message.chToggleInitialize.GetSerializedSize();
+      break;
+    case ClusterMessageType::CH_TOGGLE_PARTICIPATION:
+      size += m_message.chToggleParticipation.GetSerializedSize();
+      break;
+    case ClusterMessageType::CH_CHANGE_ADVERTISEMENT:
+      size += m_message.chChangeAdvertisement.GetSerializedSize();
+      break;
+
     default:
       break;
     }
@@ -121,7 +134,18 @@ namespace ns3
     case ClusterMessageType::HELLO_MESSAGE:
       m_message.hello.Serialize(i);
       break;
-    
+    case ClusterMessageType::CLUSTER_ADVERTISEMENT:
+      m_message.clusterAdvertisement.Serialize(i);
+      break;
+    case ClusterMessageType::CH_TOGGLE_INITIALIZE:
+      m_message.chToggleInitialize.Serialize(i);
+      break;
+    case ClusterMessageType::CH_TOGGLE_PARTICIPATION:
+      m_message.chToggleParticipation.Serialize(i);
+      break;
+    case ClusterMessageType::CH_CHANGE_ADVERTISEMENT:
+      m_message.chChangeAdvertisement.Serialize(i);
+      break;
     default:
       break;
     }
@@ -143,9 +167,21 @@ namespace ns3
     switch (m_messageType)
     {
     case ClusterMessageType::HELLO_MESSAGE:
-      size+=this->m_message.hello.Deserialize(i,m_messageSize-CR_MSG_HEADER_SIZE);
+      size += this->m_message.hello.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
       break;
-    
+    case ClusterMessageType::CLUSTER_ADVERTISEMENT:
+      size += this->m_message.clusterAdvertisement.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
+      break;
+    case ClusterMessageType::CH_TOGGLE_INITIALIZE:
+      size += this->m_message.chToggleInitialize.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
+      break;
+    case ClusterMessageType::CH_TOGGLE_PARTICIPATION:
+      size += this->m_message.chToggleParticipation.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
+      break;
+    case ClusterMessageType::CH_CHANGE_ADVERTISEMENT:
+      size += this->m_message.chChangeAdvertisement.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
+      break;
+
     default:
       break;
     }
@@ -159,7 +195,7 @@ namespace ns3
 
   uint32_t ClusterMessageHeader::Hello::GetSerializedSize() const
   {
-    return 48;
+    return 2 * VECTOR_SIZE;
   }
 
   // 24 bytes for a vector
@@ -176,6 +212,109 @@ namespace ns3
     i.Read((uint8_t *)&this->nodePosition, sizeof(nodePosition));
     i.Read((uint8_t *)&this->nodeVelocity, sizeof(nodeVelocity));
     // NS_LOG_LOGIC("Recieved node "<<nodePosition<<" "<<nodeVelocity);
-    return 48;
+    return Hello::GetSerializedSize();
   }
+
+  // Cluster Advertisement
+  void ClusterMessageHeader::ClusterAdvertisement::Print(std::ostream &os) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::ClusterAdvertisement::GetSerializedSize() const
+  {
+    return 4 + this->clusterMembers.size() * IPV4_ADDRESS_SIZE;
+  }
+
+  // 24 bytes for a vector
+  void ClusterMessageHeader::ClusterAdvertisement::Serialize(Buffer::Iterator start) const
+  {
+    Buffer::Iterator i = start;
+    i.WriteHtonU32(clusterId);
+    for (std::vector<Ipv4Address>::const_iterator it = clusterMembers.begin();
+         it != clusterMembers.end(); it++)
+    {
+      i.WriteHtonU32(it->Get());
+    }
+  }
+
+  uint32_t ClusterMessageHeader::ClusterAdvertisement::Deserialize(Buffer::Iterator start, uint32_t messageSize)
+  {
+    Buffer::Iterator i = start;
+    this->clusterId = i.ReadNtohU32();
+    this->clusterMembers.clear();
+    int numCMMembers = (messageSize - 4) / IPV4_ADDRESS_SIZE;
+    for (int n = 0; n < numCMMembers; ++n)
+    {
+      this->clusterMembers.emplace_back(i.ReadNtohU32());
+    }
+    return messageSize;
+  }
+
+  // CH Toggle Initialize
+  void ClusterMessageHeader::CH_Toggle_Initialize::Print(std::ostream &os) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::CH_Toggle_Initialize::GetSerializedSize() const
+  {
+    return 0;
+  }
+
+  void ClusterMessageHeader::CH_Toggle_Initialize::Serialize(Buffer::Iterator start) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::CH_Toggle_Initialize::Deserialize(Buffer::Iterator start, uint32_t messageSize)
+  {
+    return this->GetSerializedSize();
+  }
+
+  // CH Toggle Participation
+  void ClusterMessageHeader::CH_Toggle_Participation::Print(std::ostream &os) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::CH_Toggle_Participation::GetSerializedSize() const
+  {
+    // two double values
+    return 8 + 4;
+  }
+
+  void ClusterMessageHeader::CH_Toggle_Participation::Serialize(Buffer::Iterator start) const
+  {
+    start.WriteHtonU32(this->coins);
+    start.WriteHtonU64(this->energyLeft);
+  }
+
+  uint32_t ClusterMessageHeader::CH_Toggle_Participation::Deserialize(Buffer::Iterator start, uint32_t messageSize)
+  {
+    this->coins = start.ReadNtohU32();
+    this->energyLeft = start.ReadNtohU64();
+    return this->GetSerializedSize();
+  }
+
+  // CH Change advertisement
+  void ClusterMessageHeader::CH_Change_Advertisement::Print(std::ostream &os) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::CH_Change_Advertisement::GetSerializedSize() const
+  {
+    // int + double value
+    return 4 + IPV4_ADDRESS_SIZE;
+  }
+
+  void ClusterMessageHeader::CH_Change_Advertisement::Serialize(Buffer::Iterator start) const
+  {
+    start.WriteHtonU32(this->newClusterId);
+    start.WriteHtonU32(this->newClusterAddr.Get());
+  }
+
+  uint32_t ClusterMessageHeader::CH_Change_Advertisement::Deserialize(Buffer::Iterator start, uint32_t messageSize)
+  {
+    this->newClusterId = start.ReadNtohU32();
+    this->newClusterAddr = Ipv4Address(start.ReadNtohU32());
+    return this->GetSerializedSize();
+  }
+
 }

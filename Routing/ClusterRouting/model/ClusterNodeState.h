@@ -5,7 +5,7 @@
 #include "ns3/node.h"
 #include "ns3/UADCConstants.h"
 #include "ClusterRoutingRepository.h"
-
+#include "ns3/VanetNode.h"
 #include <set>
 
 namespace ns3
@@ -18,14 +18,14 @@ namespace ns3
 
   private:
     // Id of the cluster this node belongs to
-    // -1 if doesn't belong to any cluster
-    int m_clusterId;
+    // cluster Id will be same as the id of its cluster head
+    uint32_t m_clusterId;
 
     // Address of the current cluster head
     Ipv4Address clusterHeadAddress;
 
     // pointer of the node
-    Ptr<Node> m_node;
+    Ptr<VanetNode> m_node;
 
     // Node ID that we are using in this simulation
     uint32_t m_nodeId;
@@ -36,17 +36,33 @@ namespace ns3
 
     ClusterMembers m_clusterMemberList;
 
+    clusterTogglePariticipants m_clusterToggleParticipants;
+
   public:
     // functions for state management
     Vector GetNodeVelocity() const;
 
     Vector GetNodePosition() const;
 
+    double GetEnergyLeft() const;
+
     void AddNeighbor(const NeighborEntry &nEntry);
 
     NeighborEntry *FindNeighborEntry(Ipv4Address neighborAddr);
 
     void EraseNeighborEntry(Ipv4Address neigborAddr);
+
+    ClusterMemberEntry* FindClusterMember(Ipv4Address addr);
+
+    void AddClusterMembers(Ipv4Address newMember);
+
+    void AddClusterMembers(std::vector<Ipv4Address> newMembers);
+
+    void AddClusterToggleParticipant(ClusterTogglePariticpant ctp);
+
+    void eraseClusterToggleParticipants(){
+      this->m_clusterToggleParticipants.clear();
+    }
 
     // Getters and setters
     uint32_t GetNodeId() const;
@@ -59,13 +75,19 @@ namespace ns3
     void SetClusterHeadAddress(const Ipv4Address &ClusterHeadAddress);
 
     ClusterNodeType GetClusterNodetype() const;
-    void SetClusterNodetype(const ClusterNodeType &clusterNodetype);
+    void SetClusterNodetype(const ClusterNodeType clusterNodetype);
 
     NeighborList GetNeighbors() const;
     void SetNeighbors(const NeighborList &neighbors);
 
-    Ptr<Node> GetNode() const;
+    Ptr<VanetNode> GetNode() const;
     void SetNode(Ptr<Node> node);
+
+    ClusterMembers GetClusterMemberList() const;
+    void SetClusterMemberList(const ClusterMembers &clusterMemberList);
+
+    clusterTogglePariticipants GetClusterToggleParticipants() const;
+    void SetClusterToggleParticipants(const clusterTogglePariticipants &clusterToggleParticipants);
   };
 } // namespace ns3
 
