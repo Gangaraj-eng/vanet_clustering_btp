@@ -12,6 +12,7 @@
 #include "ns3/names.h"
 #include "ns3/simulator.h"
 #include "ns3/socket-factory.h"
+#include "ns3/ipv4-list-routing.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/udp-socket-factory.h"
 #include "ns3/UADCConstants.h"
@@ -74,14 +75,29 @@ namespace ns3
                                       Socket::SocketErrno &sockerr)
   {
     Ipv4Address destAddr = header.GetDestination();
-    Ptr<Ipv4Route> rtentry;
-    if (m_state.FindNeighborEntry(destAddr))
+    Ptr<Ipv4Route> rtentry = Create<Ipv4Route>();
+    if (m_state.GetClusterNodetype() == ClusterNodeType::ClusterMember)
     {
-      rtentry = Create<Ipv4Route>();
-      rtentry->SetDestination(destAddr);
+      // send it to cluster head
       rtentry->SetSource(m_mainAddress);
-      rtentry->SetGateway(destAddr);
+      rtentry->SetDestination(m_state.GetClusterHeadAddress());
+      rtentry->SetGateway(m_state.GetClusterHeadAddress());
       rtentry->SetOutputDevice(m_ipv4->GetNetDevice(m_mainInterface));
+    }
+    else if (m_state.GetClusterNodetype() == ClusterNodeType::ClusterHead)
+    {
+      rtentry->SetSource(header.GetSource());
+      // if destination is in same cluster, send to it directly
+      if (m_state.FindClusterMember(header.GetDestination()))
+      {
+        rtentry->SetGateway(header.GetDestination());
+        rtentry->SetOutputDevice(m_ipv4->GetNetDevice(m_mainInterface));
+        rtentry->SetDestination(header.GetDestination());
+      }
+      else
+      {
+        // Get the CH Address of destination and send it using MOLSR
+      }
     }
     return rtentry;
   }
@@ -105,6 +121,19 @@ namespace ns3
 
     NS_ASSERT(m_ipv4->GetInterfaceForDevice(idev) >= 0);
     uint32_t iif = m_ipv4->GetInterfaceForDevice(idev);
+
+    if (dst == m_mainAddress)
+    {
+      if (m_state.GetClusterNodetype() == ClusterNodeType::ClusterHead)
+      {
+        // if cluster head, then check whether it should be redirected to some
+        // cluster member or not
+        Ptr<Packet> packetCopy = p->Copy();
+        lcb(packetCopy, header, iif);
+      }
+      return true;
+    }
+
     if (m_ipv4->IsDestinationAddress(dst, iif))
     {
       if (!lcb.IsNull())
@@ -199,18 +228,6 @@ namespace ns3
 
   void ClusterRoutingProtocol::DoDispose()
   {
-    if (m_state.GetClusterNodetype() == ClusterHead)
-    {
-      NS_LOG_INFO("ch " << m_mainAddress);
-      for (auto i : m_state.GetClusterMemberList())
-      {
-        NS_LOG_INFO(" cm " << i.memberAddress);
-      }
-    }
-    else
-    {
-      // NS_LOG_INFO(m_mainAddress << " " << m_state.GetClusterHeadAddress());
-    }
     if (m_recvSocket)
       m_recvSocket->Close();
     if (m_sendSocket)
@@ -268,7 +285,6 @@ namespace ns3
     SendPacket(packet);
 
     // schedule now
-    m_clusterToggleInitiateTimer.Schedule(Seconds(3) + JITTER);
   }
 
   void ClusterRoutingProtocol::SendClusterToggleInitiateRequest()
@@ -280,7 +296,7 @@ namespace ns3
     Ptr<Packet> packet = Create<Packet>();
     ClusterMessageHeader msg;
     PopulateMessageHeader(msg);
-    m_evaluateNewClusterTimer.Schedule(m_chToggleIntiateWaitTime);
+    m_evaluateNewClusterTimer.Schedule(m_chToggleIntiateWaitTime + JITTER);
     ClusterMessageHeader::CH_Toggle_Initialize cht;
     msg.SetChToggleInitialize(cht);
     packet->AddHeader(msg);
@@ -303,15 +319,65 @@ namespace ns3
     }
   }
 
-  void ClusterRoutingProtocol::SendChChangeAdvertisement(Ptr<Packet> packet)
+  void ClusterRoutingProtocol::SendChChangeAdvertisement()
   {
+    Ptr<Packet> packet = Create<Packet>();
+    ClusterMessageHeader msg;
+    PopulateMessageHeader(msg);
+    ClusterMessageHeader::CH_Change_Advertisement chadv;
+    chadv.newClusterAddr = m_state.GetClusterHeadAddress();
+    chadv.newClusterId = m_state.GetClusterId();
+    msg.SetChChangeAdvertisement(chadv);
+    packet->AddHeader(msg);
+    m_state.eraseClusterToggleParticipants();
     SendPacket(packet);
   }
 
-  // Broadcasts a packet to its neighbors
-  void ClusterRoutingProtocol::SendPacket(Ptr<Packet> packet)
+  void ClusterRoutingProtocol::SendCHToggleAck()
   {
-    Ipv4Address destination = m_ipv4->GetAddress(m_mainInterface, 0).GetLocal().GetSubnetDirectedBroadcast(m_ipv4->GetAddress(m_mainInterface, 0).GetMask());
+    Ptr<Packet> packet = Create<Packet>();
+    ClusterMessageHeader msg;
+    PopulateMessageHeader(msg);
+    ClusterMessageHeader::CH_ToggledAcknowledgement chack;
+    msg.SetChToggledAck(chack);
+    packet->AddHeader(msg);
+    SendPacket(packet);
+  }
+
+  void ClusterRoutingProtocol::SendCHTransferData(Ipv4Address addr)
+  {
+    NS_LOG_LOGIC(m_mainAddress << " sending ch transfer data " << addr);
+    std::vector<Ipv4Address> cms;
+    ClusterMembers cmEntries = m_state.GetClusterMemberList();
+    for (auto it : cmEntries)
+    {
+      if (it.memberAddress != addr)
+        cms.emplace_back(it.memberAddress);
+    }
+    PrintCluster();
+    cms.emplace_back(m_mainAddress);
+    NS_LOG_LOGIC("From sender " << cmEntries.size() << " " << cms.size());
+    Ptr<Packet> packet = Create<Packet>();
+    ClusterMessageHeader msg;
+    PopulateMessageHeader(msg);
+    ClusterMessageHeader::CH_Transfer_Data ctd;
+    ctd.clusterMembers = cms;
+    ctd.newChAddr = addr;
+    ctd.numClusterMembers = cms.size();
+    ctd.clusterMap = m_state.GetClusterMap();
+    msg.SetChTransferData(ctd);
+    packet->AddHeader(msg);
+    SendPacket(packet, ctd.newChAddr);
+  }
+
+  // Broadcasts a packet to its neighbors
+  void ClusterRoutingProtocol::SendPacket(Ptr<Packet> packet, Ipv4Address addr)
+  {
+    Ipv4Address destination = addr;
+    if (addr == Ipv4Address())
+    {
+      destination = m_ipv4->GetAddress(m_mainInterface, 0).GetLocal().GetSubnetDirectedBroadcast(m_ipv4->GetAddress(m_mainInterface, 0).GetMask());
+    }
     m_sendSocket->SendTo(packet, 0, InetSocketAddress(destination, CLUSTER_ROUTING_PORT_NUMBER));
   }
 
@@ -350,10 +416,19 @@ namespace ns3
       break;
     case ClusterMessageType::CH_TOGGLE_INITIALIZE:
       ProcessClusterToggleInitiate(msgHeader);
+      break;
     case ClusterMessageType::CH_TOGGLE_PARTICIPATION:
       ProcessClusterToggleParticipation(msgHeader);
+      break;
     case ClusterMessageType::CH_CHANGE_ADVERTISEMENT:
       ProcessChChangeAdvertisement(msgHeader);
+      break;
+    case ClusterMessageType::CH_TRANSFER_DATA:
+      ProcessChTransferData(msgHeader);
+      break;
+    case ClusterMessageType::CH_ToggledAck:
+      ProcessChToggleAck(msgHeader);
+      break;
     default:
       break;
     }
@@ -393,29 +468,37 @@ namespace ns3
   void ClusterRoutingProtocol::EvaluateNewCluster()
   {
     clusterTogglePariticipants ctps = m_state.GetClusterToggleParticipants();
-    NS_LOG_INFO(m_mainAddress << " - " << m_state.GetClusterToggleParticipants().size());
-    Ptr<Packet> packet = Create<Packet>();
-    ClusterMessageHeader msg;
-    PopulateMessageHeader(msg);
-    ClusterMessageHeader::CH_Change_Advertisement chadv;
-    chadv.newClusterAddr = ctps[0].memberAdr;
-    chadv.newClusterId = ctps[0].nodeId;
-    msg.SetChChangeAdvertisement(chadv);
-    packet->AddHeader(msg);
-    m_state.eraseClusterToggleParticipants();
-    Simulator::Schedule(JITTER, &ClusterRoutingProtocol::SendChChangeAdvertisement, this, packet);
+    NS_LOG_LOGIC(m_mainAddress << " - " << m_state.GetClusterToggleParticipants().size());
+    if (ctps.size() == 0)
+      return;
+    Ipv4Address newChAddr = ctps[0].memberAdr;
+    NS_LOG_LOGIC(m_mainAddress << " " << newChAddr);
+    m_state.newCHAddr = newChAddr;
+    Simulator::Schedule(JITTER, &ClusterRoutingProtocol::SendCHTransferData, this, newChAddr);
+  }
+
+  double findDistance(Vector a, Vector b)
+  {
+    return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
   }
 
   void ClusterRoutingProtocol::ProcessHello(ClusterMessageHeader helloMessage, Ipv4Address recievedIfaceAddress, Ipv4Address senderIfaceAddress)
   {
     NS_LOG_LOGIC(m_mainAddress << " " << helloMessage.GetOriginatorAddress() << " " << helloMessage.GetNodeId());
     NeighborEntry *n_entry = m_state.FindNeighborEntry(senderIfaceAddress);
-
+    ClusterMessageHeader::Hello hello = helloMessage.GetHello();
+    Vector currPosition = m_state.GetNodePosition();
+    Vector senderPosition = hello.nodePosition;
+    double distance = findDistance(currPosition, senderPosition);
+    if (distance > 10000.0 / 2)
+      return;
     if (n_entry != nullptr)
     {
       // Neighbor already exists
       // update link expire time
       n_entry->time = Simulator::Now() + helloMessage.GetVTime();
+      n_entry->neighborPosition = hello.nodePosition;
+      n_entry->neighborVelocity = hello.nodeVelocity;
       m_events.Track(Simulator::Schedule(DELAY(n_entry->time),
                                          &ClusterRoutingProtocol::NeighborTimerExpire, this, n_entry->neighborAddress));
       return;
@@ -425,6 +508,8 @@ namespace ns3
       n_entry = new NeighborEntry();
       n_entry->neighborAddress = senderIfaceAddress;
       n_entry->time = Simulator::Now() + helloMessage.GetVTime();
+      n_entry->neighborPosition = hello.nodePosition;
+      n_entry->neighborVelocity = hello.nodeVelocity;
       m_state.AddNeighbor(*n_entry);
       m_events.Track(Simulator::Schedule(DELAY(n_entry->time),
                                          &ClusterRoutingProtocol::NeighborTimerExpire, this, n_entry->neighborAddress));
@@ -442,6 +527,8 @@ namespace ns3
       std::vector<Ipv4Address> adjacentCMs = message.GetClusterAdvertisement().clusterMembers;
       adjacentCMs.emplace_back(message.GetOriginatorAddress());
       m_state.AddClusterMembers(adjacentCMs);
+      if (!m_clusterToggleInitiateTimer.IsRunning())
+        m_clusterToggleInitiateTimer.Schedule(Seconds(5) + JITTER);
     }
     else if (message.GetClusterId() != message.GetNodeId())
     {
@@ -473,8 +560,11 @@ namespace ns3
     }
     // NS_LOG_INFO("Node " << m_mainAddress << " recieved cht from " << message.GetOriginatorAddress());
     // SendClusterToggleParticipation();
-    m_sendClsuterToggleParticipation.SetDelay(JITTER);
-    m_sendClsuterToggleParticipation.Schedule();
+    if (not m_sendClsuterToggleParticipation.IsRunning())
+    {
+      m_sendClsuterToggleParticipation.SetDelay(JITTER);
+      m_sendClsuterToggleParticipation.Schedule();
+    }
   }
 
   void ClusterRoutingProtocol::ProcessClusterToggleParticipation(ClusterMessageHeader message)
@@ -484,6 +574,7 @@ namespace ns3
     {
       return;
     }
+    // if the sender is its clustermember
     if (m_state.GetNodeId() == message.GetClusterId())
     {
       ClusterMessageHeader::CH_Toggle_Participation ctpMsg = message.GetChToggleParticipation();
@@ -507,11 +598,13 @@ namespace ns3
 
   void ClusterRoutingProtocol::ProcessChChangeAdvertisement(ClusterMessageHeader message)
   {
+    if (m_state.GetClusterNodetype() == ClusterHead)
+      return;
     // if send from CH, then only update
     if (message.GetNodeId() == m_state.GetClusterId() and message.GetOriginatorAddress() == m_state.GetClusterHeadAddress())
     {
       ClusterMessageHeader::CH_Change_Advertisement chadv = message.GetChChangeAdvertisement();
-      NS_LOG_INFO(m_mainAddress << " | " << message.GetOriginatorAddress() << " " << chadv.newClusterAddr);
+      NS_LOG_INFO(m_mainAddress << " | " << message.GetOriginatorAddress() << " " << chadv.newClusterAddr << " " << chadv.newClusterId);
       if (chadv.newClusterAddr == m_mainAddress)
       {
         m_state.SetClusterHeadAddress(m_mainAddress);
@@ -525,6 +618,52 @@ namespace ns3
         m_state.SetClusterNodetype(ClusterNodeType::ClusterMember);
         m_state.SetClusterMemberList({});
       }
+    }
+  }
+
+  void ClusterRoutingProtocol::ProcessChToggleAck(ClusterMessageHeader msg)
+  {
+    if (msg.GetOriginatorAddress() == m_state.newCHAddr)
+    {
+      m_state.SetClusterHeadAddress(m_state.newCHAddr);
+      m_state.newCHAddr = Ipv4Address();
+      m_state.SetClusterNodetype(ClusterNodeType::ClusterMember);
+      m_state.SetClusterMemberList({});
+      m_state.SetClusterId(msg.GetNodeId());
+      // sned this new ch info to all
+
+      Simulator::Schedule(JITTER, &ClusterRoutingProtocol::SendChChangeAdvertisement, this);
+    }
+  }
+
+  void ClusterRoutingProtocol::ProcessChTransferData(ClusterMessageHeader msg)
+  {
+    ClusterMessageHeader::CH_Transfer_Data ctd = msg.GetChTransferData();
+    if (ctd.newChAddr == m_mainAddress and msg.GetNodeId() == m_state.GetClusterId())
+    {
+      NS_LOG_LOGIC(m_mainAddress << " elected as new CH");
+      m_state.SetClusterHeadAddress(m_mainAddress);
+      m_state.SetClusterNodetype(ClusterNodeType::ClusterHead);
+      m_state.SetClusterId(m_state.GetNodeId());
+      std::vector<Ipv4Address> cmsAddrs = ctd.clusterMembers;
+      ClusterMembers cms;
+      for (auto it = cmsAddrs.begin(); it != cmsAddrs.end(); it++)
+      {
+        NeighborEntry *ntr = m_state.FindNeighborEntry(*it);
+        if (ntr != nullptr)
+        {
+          ClusterMemberEntry cmcurr;
+          cmcurr.memberAddress = ntr->neighborAddress;
+          cmcurr.position = ntr->neighborPosition;
+          cmcurr.velocity = ntr->neighborVelocity;
+          cmcurr.Reputation = 0;
+          cms.emplace_back(cmcurr);
+        }
+      }
+      m_state.SetClusterMemberList(cms);
+      m_state.SetClusterMap(ctd.clusterMap);
+      PrintCluster();
+      Simulator::Schedule(JITTER, &ClusterRoutingProtocol::SendCHToggleAck, this);
     }
   }
 
@@ -542,6 +681,18 @@ namespace ns3
     msg.setMessageSequenceNumber(GetMessageSequenceNumber());
     msg.SetClusterId(m_state.GetClusterId());
     msg.setNodeId(m_state.GetNodeId());
+  }
+
+  void ClusterRoutingProtocol::PrintCluster()
+  {
+    if (ClusterNodeType::ClusterHead == m_state.GetClusterNodetype())
+    {
+      NS_LOG_INFO("CH :" << m_mainAddress);
+      for (auto i : m_state.GetClusterMemberList())
+      {
+        NS_LOG_INFO("  CM " << i.memberAddress);
+      }
+    }
   }
 
   void ClusterRoutingProtocol::SetMainInterface(uint32_t interface)

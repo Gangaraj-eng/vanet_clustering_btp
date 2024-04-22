@@ -1,0 +1,7 @@
+VanetRouting - Combines the logic for all three routings
+CR - Cluster Routing
+OLSR - Optimized Link State Routing  (Modified version)
+QR - Query Routing
+
+Key points:
+

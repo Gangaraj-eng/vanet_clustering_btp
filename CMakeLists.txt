@@ -14,6 +14,9 @@ build_lib(
   Application/model/VanetNodeApplication.cc
   Application/helper/VanetNodeApplicationHelper.cc
   Nodes/RSU/RSUNode.cc
+
+  Routing/VanetRouting/helper/VanetRoutingHelper.cc
+  Routing/VanetRouting/model/VanetRoutingProtocol.cc
   HEADER_FILES
   Nodes/VANET/VanetNode.h
   Nodes/FANET/FanetNode.h
@@ -31,5 +34,8 @@ build_lib(
   Routing/MolsrRouting/model/molsr-routing-protocol.h
   Application/model/VanetNodeApplication.h
   Application/helper/VanetNodeApplicationHelper.h
+
+  Routing/VanetRouting/helper/VanetRoutingHelper.h
+  Routing/VanetRouting/model/VanetRoutingProtocol.h
   LIBRARIES_TO_LINK ${libinternet}
 )

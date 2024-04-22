@@ -18,7 +18,7 @@ namespace ns3
   private:
     void StartApplication() override;
     void StopApplication() override;
-    void SendPacket(Ptr<Packet> packet, Ipv4Address destination,uint16_t port);
+    void SendPacket();
     void RecieveMessage(Ptr<Socket> socket);
     bool IsNodeClusterHead();
 

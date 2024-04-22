@@ -65,3 +65,5 @@ Code conventions
 - m_ prefix for local state varaibles
 - getters and setters at the end
 - basic function at the beginning (constructor, virtual methods of parent)
+- using "auto" keyword increases compile time but does not affect run time and hence speed of algo
+- so use wherever possible

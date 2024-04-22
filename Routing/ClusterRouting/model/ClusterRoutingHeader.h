@@ -112,6 +112,14 @@ namespace ns3
 
     struct CH_Transfer_Data
     {
+      int numClusterMembers;
+      Ipv4Address newChAddr;
+      std::vector<Ipv4Address> clusterMembers;
+      std::map<Ipv4Address,Ipv4Address> clusterMap;
+      void Print(std::ostream &os) const;
+      uint32_t GetSerializedSize() const;
+      void Serialize(Buffer::Iterator start) const;
+      uint32_t Deserialize(Buffer::Iterator start, uint32_t messageSize);
     };
 
     // CMs send this as a reply to CH_Toggle_Initialize
@@ -138,6 +146,14 @@ namespace ns3
       uint32_t Deserialize(Buffer::Iterator start, uint32_t messageSize);
     };
 
+    struct CH_ToggledAcknowledgement
+    {
+      void Print(std::ostream &os) const;
+      uint32_t GetSerializedSize() const;
+      void Serialize(Buffer::Iterator start) const;
+      uint32_t Deserialize(Buffer::Iterator start, uint32_t messageSize);
+    };
+
   private:
     struct
     {
@@ -147,6 +163,7 @@ namespace ns3
       CH_Toggle_Participation chToggleParticipation;
       CH_Change_Advertisement chChangeAdvertisement;
       CH_Transfer_Data chTransferData;
+      CH_ToggledAcknowledgement chToggleAck;
     } m_message;
 
   public:
@@ -185,6 +202,12 @@ namespace ns3
     {
       this->m_messageType = ClusterMessageType::CH_CHANGE_ADVERTISEMENT;
       this->m_message.chChangeAdvertisement = ccadv;
+    }
+
+    void SetChToggledAck(CH_ToggledAcknowledgement chack)
+    {
+      this->m_messageType = ClusterMessageType::CH_ToggledAck;
+      this->m_message.chToggleAck = chack;
     }
 
     Hello GetHello() const
@@ -252,6 +275,7 @@ namespace ns3
     uint16_t GetNodeId() const { return m_nodeId; }
     void setNodeId(const uint16_t &nodeId) { m_nodeId = nodeId; }
   };
+
 } // namespace ns3
 
 #endif

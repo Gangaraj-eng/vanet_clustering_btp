@@ -11,13 +11,17 @@
 class SimulationParamters
 {
 public:
-  static const int numVanetNodes = 6;
+  // num Vanet Nodes = 100
+  // num Fanet Nodes = 20
+  static const int numVanetNodes = 90;
+  static const int numFanetNodes = 9;
   static const int VanetNodeMaxSpeed = 30;
-  static const int simulationDimension = 100;
+  static const int simulationDimension = 1000;
   static const int TotalSimulationTime = 20; // in seconds
+  static const int ClusterRange = 5000;
 
-  static const int VanetNodeRange = 500; // in meters
-  static const int FanetNodeRange = 300; // in meters
+  static const int VanetNodeRange = 500;  // in meters
+  static const int FanetNodeRange = 1000; // in meters
 };
 
 // The type of the node in the network
@@ -37,12 +41,14 @@ enum ClusterNodeType
 
 enum ClusterMessageType
 {
+  NONE = 0,
   HELLO_MESSAGE = 1,
   CLUSTER_ADVERTISEMENT = 2,
   CH_TOGGLE_INITIALIZE = 3,
   CH_TOGGLE_PARTICIPATION = 4,
   CH_TRANSFER_DATA = 5,
-  CH_CHANGE_ADVERTISEMENT = 6
+  CH_ToggledAck = 6,
+  CH_CHANGE_ADVERTISEMENT = 7
 };
 
 enum MolsrMessageType

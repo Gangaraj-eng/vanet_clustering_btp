@@ -76,7 +76,10 @@ namespace ns3
   }
 
   NS_OBJECT_ENSURE_REGISTERED(ClusterMessageHeader);
-  ClusterMessageHeader::ClusterMessageHeader() {}
+  ClusterMessageHeader::ClusterMessageHeader()
+  {
+    this->m_messageType = ClusterMessageType::NONE;
+  }
 
   ClusterMessageHeader::~ClusterMessageHeader() {}
 
@@ -110,6 +113,12 @@ namespace ns3
       break;
     case ClusterMessageType::CH_CHANGE_ADVERTISEMENT:
       size += m_message.chChangeAdvertisement.GetSerializedSize();
+      break;
+    case ClusterMessageType::CH_ToggledAck:
+      size += m_message.chToggleAck.GetSerializedSize();
+      break;
+    case ClusterMessageType::CH_TRANSFER_DATA:
+      size += m_message.chTransferData.GetSerializedSize();
       break;
 
     default:
@@ -146,6 +155,12 @@ namespace ns3
     case ClusterMessageType::CH_CHANGE_ADVERTISEMENT:
       m_message.chChangeAdvertisement.Serialize(i);
       break;
+    case ClusterMessageType::CH_ToggledAck:
+      m_message.chToggleAck.Serialize(i);
+      break;
+    case ClusterMessageType::CH_TRANSFER_DATA:
+      m_message.chTransferData.Serialize(i);
+      break;
     default:
       break;
     }
@@ -180,6 +195,12 @@ namespace ns3
       break;
     case ClusterMessageType::CH_CHANGE_ADVERTISEMENT:
       size += this->m_message.chChangeAdvertisement.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
+      break;
+    case ClusterMessageType::CH_ToggledAck:
+      size += this->m_message.chToggleAck.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
+      break;
+    case ClusterMessageType::CH_TRANSFER_DATA:
+      size += this->m_message.chTransferData.Deserialize(i, m_messageSize - CR_MSG_HEADER_SIZE);
       break;
 
     default:
@@ -314,6 +335,77 @@ namespace ns3
   {
     this->newClusterId = start.ReadNtohU32();
     this->newClusterAddr = Ipv4Address(start.ReadNtohU32());
+    return this->GetSerializedSize();
+  }
+
+  // CH Toggled Acknowledgement
+  void ClusterMessageHeader::CH_ToggledAcknowledgement::Print(std::ostream &os) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::CH_ToggledAcknowledgement::GetSerializedSize() const
+  {
+
+    return 0;
+  }
+
+  void ClusterMessageHeader::CH_ToggledAcknowledgement::Serialize(Buffer::Iterator start) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::CH_ToggledAcknowledgement::Deserialize(Buffer::Iterator start, uint32_t messageSize)
+  {
+
+    return this->GetSerializedSize();
+  }
+
+  // CH Transfer Data
+  void ClusterMessageHeader::CH_Transfer_Data::Print(std::ostream &os) const
+  {
+  }
+
+  uint32_t ClusterMessageHeader::CH_Transfer_Data::GetSerializedSize() const
+  {
+
+    return 4 + IPV4_ADDRESS_SIZE * (1 + clusterMembers.size() + 2 * clusterMap.size());
+  }
+
+  void ClusterMessageHeader::CH_Transfer_Data::Serialize(Buffer::Iterator start) const
+  {
+    Buffer::Iterator i = start;
+    i.WriteHtonU32(this->numClusterMembers);
+    i.WriteHtonU32(this->newChAddr.Get());
+    for (auto it = clusterMembers.begin(); it != clusterMembers.end(); it++)
+    {
+      i.WriteHtonU32(it->Get());
+    }
+    for (auto it : clusterMap)
+    {
+      i.WriteHtonU32(it.first.Get());
+      i.WriteHtonU32(it.second.Get());
+    }
+  }
+
+  uint32_t ClusterMessageHeader::CH_Transfer_Data::Deserialize(Buffer::Iterator start, uint32_t messageSize)
+  {
+    Buffer::Iterator i = start;
+    this->numClusterMembers = i.ReadNtohU32();
+    this->newChAddr = Ipv4Address(i.ReadNtohU32());
+    clusterMembers.clear();
+    int n = numClusterMembers;
+    while (n--)
+    {
+      clusterMembers.emplace_back(Ipv4Address(i.ReadNtohU32()));
+    }
+    clusterMap.clear();
+    n = (messageSize - 4 - IPV4_ADDRESS_SIZE * (1 + numClusterMembers)) / (2 * IPV4_ADDRESS_SIZE);
+    while (n--)
+    {
+      Ipv4Address nodeAddr = Ipv4Address(i.ReadNtohU32());
+      Ipv4Address chAddr = Ipv4Address(i.ReadNtohU32());
+      clusterMap[nodeAddr] = chAddr;
+    }
+
     return this->GetSerializedSize();
   }
 

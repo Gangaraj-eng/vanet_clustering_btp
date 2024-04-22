@@ -436,8 +436,8 @@ namespace ns3
         void
         RoutingProtocol::RecvOlsr(Ptr<Socket> socket)
         {
-            NS_LOG_ERROR("Reciver called " << Simulator::Now());
-            return;
+            // NS_LOG_ERROR("Reciver called " << Simulator::Now());
+            // return;
             Ptr<Packet> receivedPacket;
             Address sourceAddress;
             receivedPacket = socket->RecvFrom(sourceAddress);
@@ -535,7 +535,7 @@ namespace ns3
                 //         {
                 //           peerMainAddress = inetSourceAddr.GetIpv4 () ;
                 //         }
-
+                // NS_LOG_INFO(messageHeader.GetMessageType());
                 if (duplicated == nullptr)
                 {
                     switch (messageHeader.GetMessageType())
@@ -754,25 +754,6 @@ namespace ns3
                 }
             }
 
-#ifdef NS3_LOG_ENABLE
-            {
-                std::ostringstream os;
-                os << "[";
-                for (TwoHopNeighborSet::const_iterator iter = N2.begin(); iter != N2.end(); iter++)
-                {
-                    TwoHopNeighborSet::const_iterator next = iter;
-                    next++;
-                    os << iter->neighborMainAddr << "->" << iter->twoHopNeighborAddr;
-                    if (next != N2.end())
-                    {
-                        os << ", ";
-                    }
-                }
-                os << "]";
-                NS_LOG_DEBUG("N2: " << os.str());
-            }
-#endif // NS3_LOG_ENABLE
-
             // 1. Start with an MPR set made of all members of N with
             // N_willingness equal to WILL_ALWAYS
             for (NeighborSet::const_iterator neighbor = N.begin(); neighbor != N.end(); neighbor++)
@@ -851,25 +832,6 @@ namespace ns3
             // least one node in the MPR set:
             while (N2.begin() != N2.end())
             {
-#ifdef NS3_LOG_ENABLE
-                {
-                    std::ostringstream os;
-                    os << "[";
-                    for (TwoHopNeighborSet::const_iterator iter = N2.begin(); iter != N2.end(); iter++)
-                    {
-                        TwoHopNeighborSet::const_iterator next = iter;
-                        next++;
-                        os << iter->neighborMainAddr << "->" << iter->twoHopNeighborAddr;
-                        if (next != N2.end())
-                        {
-                            os << ", ";
-                        }
-                    }
-                    os << "]";
-                    NS_LOG_DEBUG("Step 4 iteration: N2=" << os.str());
-                }
-#endif // NS3_LOG_ENABLE
-
                 // 4.1. For each node in N, calculate the reachability, i.e., the
                 // number of nodes in N2 which are not yet covered by at
                 // least one node in the MPR set, and which are reachable
@@ -945,25 +907,6 @@ namespace ns3
                     NS_LOG_LOGIC(N2.size() << " 2-hop neighbors left to cover!");
                 }
             }
-
-#ifdef NS3_LOG_ENABLE
-            {
-                std::ostringstream os;
-                os << "[";
-                for (MprSet::const_iterator iter = mprSet.begin(); iter != mprSet.end(); iter++)
-                {
-                    MprSet::const_iterator next = iter;
-                    next++;
-                    os << *iter;
-                    if (next != mprSet.end())
-                    {
-                        os << ", ";
-                    }
-                }
-                os << "]";
-                NS_LOG_DEBUG("Computed MPR set for node " << m_mainAddress << ": " << os.str());
-            }
-#endif // NS3_LOG_ENABLE
 
             m_state.SetMprSet(mprSet);
         }
@@ -1301,52 +1244,14 @@ namespace ns3
                                       const Ipv4Address &senderIface)
         {
             NS_LOG_FUNCTION(msg << receiverIface << senderIface);
-
+            // NS_LOG_ERROR("Processing hello "<<m_mainAddress);
             const molsr::MessageHeader::Hello &hello = msg.GetHello();
 
             LinkSensing(msg, hello, receiverIface, senderIface);
 
-#ifdef NS3_LOG_ENABLE
-            {
-                const LinkSet &links = m_state.GetLinks();
-                NS_LOG_DEBUG(Simulator::Now().As(Time::S)
-                             << " ** BEGIN dump Link Set for OLSR Node " << m_mainAddress);
-                for (LinkSet::const_iterator link = links.begin(); link != links.end(); link++)
-                {
-                    NS_LOG_DEBUG(*link);
-                }
-                NS_LOG_DEBUG("** END dump Link Set for OLSR Node " << m_mainAddress);
-
-                const NeighborSet &neighbors = m_state.GetNeighbors();
-                NS_LOG_DEBUG(Simulator::Now().As(Time::S)
-                             << " ** BEGIN dump Neighbor Set for OLSR Node " << m_mainAddress);
-                for (NeighborSet::const_iterator neighbor = neighbors.begin(); neighbor != neighbors.end();
-                     neighbor++)
-                {
-                    NS_LOG_DEBUG(*neighbor);
-                }
-                NS_LOG_DEBUG("** END dump Neighbor Set for OLSR Node " << m_mainAddress);
-            }
-#endif // NS3_LOG_ENABLE
-
             PopulateNeighborSet(msg, hello);
             PopulateTwoHopNeighborSet(msg, hello);
-
-#ifdef NS3_LOG_ENABLE
-            {
-                const TwoHopNeighborSet &twoHopNeighbors = m_state.GetTwoHopNeighbors();
-                NS_LOG_DEBUG(Simulator::Now().As(Time::S)
-                             << " ** BEGIN dump TwoHopNeighbor Set for OLSR Node " << m_mainAddress);
-                for (TwoHopNeighborSet::const_iterator tuple = twoHopNeighbors.begin();
-                     tuple != twoHopNeighbors.end();
-                     tuple++)
-                {
-                    NS_LOG_DEBUG(*tuple);
-                }
-                NS_LOG_DEBUG("** END dump TwoHopNeighbor Set for OLSR Node " << m_mainAddress);
-            }
-#endif // NS3_LOG_ENABLE
-
+            
             MprComputation();
             PopulateMprSelectorSet(msg, hello);
         }
@@ -1424,19 +1329,6 @@ namespace ns3
                                                        topologyTuple.lastAddr));
                 }
             }
-
-#ifdef NS3_LOG_ENABLE
-            {
-                const TopologySet &topology = m_state.GetTopologySet();
-                NS_LOG_DEBUG(Simulator::Now().As(Time::S)
-                             << " ** BEGIN dump TopologySet for OLSR Node " << m_mainAddress);
-                for (TopologySet::const_iterator tuple = topology.begin(); tuple != topology.end(); tuple++)
-                {
-                    NS_LOG_DEBUG(*tuple);
-                }
-                NS_LOG_DEBUG("** END dump TopologySet Set for OLSR Node " << m_mainAddress);
-            }
-#endif // NS3_LOG_ENABLE
         }
 
         void
@@ -2059,47 +1951,6 @@ namespace ns3
                 int lt = linkMessage->linkCode & 0x03;        // Link Type
                 int nt = (linkMessage->linkCode >> 2) & 0x03; // Neighbor Type
 
-#ifdef NS3_LOG_ENABLE
-                const char *linkTypeName;
-                switch (lt)
-                {
-                case OLSR_UNSPEC_LINK:
-                    linkTypeName = "UNSPEC_LINK";
-                    break;
-                case OLSR_ASYM_LINK:
-                    linkTypeName = "ASYM_LINK";
-                    break;
-                case OLSR_SYM_LINK:
-                    linkTypeName = "SYM_LINK";
-                    break;
-                case OLSR_LOST_LINK:
-                    linkTypeName = "LOST_LINK";
-                    break;
-                default:
-                    linkTypeName = "(invalid value!)";
-                }
-
-                const char *neighborTypeName;
-                switch (nt)
-                {
-                case OLSR_NOT_NEIGH:
-                    neighborTypeName = "NOT_NEIGH";
-                    break;
-                case OLSR_SYM_NEIGH:
-                    neighborTypeName = "SYM_NEIGH";
-                    break;
-                case OLSR_MPR_NEIGH:
-                    neighborTypeName = "MPR_NEIGH";
-                    break;
-                default:
-                    neighborTypeName = "(invalid value!)";
-                }
-
-                NS_LOG_DEBUG("Looking at HELLO link messages with Link Type "
-                             << lt << " (" << linkTypeName << ") and Neighbor Type " << nt << " ("
-                             << neighborTypeName << ")");
-#endif // NS3_LOG_ENABLE
-
                 // We must not process invalid advertised links
                 if ((lt == OLSR_SYM_LINK && nt == OLSR_NOT_NEIGH) ||
                     (nt != OLSR_SYM_NEIGH && nt != OLSR_MPR_NEIGH && nt != OLSR_NOT_NEIGH))
@@ -2214,13 +2065,6 @@ namespace ns3
                      linkMessage++)
                 {
                     int neighborType = (linkMessage->linkCode >> 2) & 0x3;
-#ifdef NS3_LOG_ENABLE
-                    const char *neighborTypeNames[3] = {"NOT_NEIGH", "SYM_NEIGH", "MPR_NEIGH"};
-                    const char *neighborTypeName =
-                        ((neighborType < 3) ? neighborTypeNames[neighborType] : "(invalid value)");
-                    NS_LOG_DEBUG("Looking at Link Message from HELLO message: neighborType="
-                                 << neighborType << " (" << neighborTypeName << ")");
-#endif // NS3_LOG_ENABLE
 
                     for (std::vector<Ipv4Address>::const_iterator nb2hop_addr_iter =
                              linkMessage->neighborInterfaceAddresses.begin();
@@ -2345,43 +2189,6 @@ namespace ns3
             NS_LOG_DEBUG("Computed MPR selector set for node " << m_mainAddress << ": "
                                                                << m_state.PrintMprSelectorSet());
         }
-
-#if 0
-///
-/// \brief Drops a given packet because it couldn't be delivered to the corresponding
-/// destination by the MAC layer. This may cause a neighbor loss, and appropriate
-/// actions are then taken.
-///
-/// \param p the packet which couldn't be delivered by the MAC layer.
-///
-void
-molsr::mac_failed(Ptr<Packet> p)
-{
-    double now = Simulator::Now ();
-    struct hdr_ip* ih = HDR_IP (p);
-    struct hdr_cmn* ch = HDR_CMN (p);
-
-    debug("%f: Node %d MAC Layer detects a breakage on link to %d\n",
-          now,
-          molsr::node_id (ra_addr ()),
-          molsr::node_id (ch->next_hop ()));
-
-    if ((uint32_t)ih->daddr () == IP_BROADCAST)
-    {
-        drop (p, DROP_RTR_MAC_CALLBACK);
-        return;
-    }
-
-    OLSR_link_tuple* link_tuple = state_.find_link_tuple(ch->next_hop());
-    if (link_tuple)
-    {
-        link_tuple->lost_time() = now + OLSR_NEIGHB_HOLD_TIME;
-        link_tuple->time() = now + OLSR_NEIGHB_HOLD_TIME;
-        nb_loss(link_tuple);
-    }
-    drop(p, DROP_RTR_MAC_CALLBACK);
-}
-#endif
 
         void
         RoutingProtocol::NeighborLoss(const LinkTuple &tuple)
@@ -2921,6 +2728,7 @@ molsr::mac_failed(Ptr<Packet> p)
                                      Ptr<NetDevice> oif,
                                      Socket::SocketErrno &sockerr)
         {
+            NS_LOG_ERROR("Route output of "<<m_mainAddress<<" "<<header.GetDestination());
             NS_LOG_FUNCTION(this << " " << m_ipv4->GetObject<Node>()->GetId() << " "
                                  << header.GetDestination() << " " << oif);
             Ptr<Ipv4Route> rtentry;
@@ -2969,6 +2777,7 @@ molsr::mac_failed(Ptr<Packet> p)
                 }
                 rtentry->SetSource(ifAddr.GetLocal());
                 rtentry->SetGateway(entry2.nextAddr);
+                NS_LOG_ERROR("hop count = "<<entry1.distance<<" "<<entry1.nextAddr<<" "<<entry2.distance<<" "<<entry2.nextAddr<<" "<<GetNeighbors().size());
                 rtentry->SetOutputDevice(m_ipv4->GetNetDevice(interfaceIdx));
                 sockerr = Socket::ERROR_NOTERROR;
                 NS_LOG_DEBUG("Olsr node " << m_mainAddress << ": RouteOutput for dest="
@@ -3000,6 +2809,7 @@ molsr::mac_failed(Ptr<Packet> p)
                                           << header.GetDestination() << " No route to host");
                 sockerr = Socket::ERROR_NOROUTETOHOST;
             }
+            NS_LOG_ERROR(found);
             return rtentry;
         }
 
@@ -3015,7 +2825,7 @@ molsr::mac_failed(Ptr<Packet> p)
 
             NS_LOG_FUNCTION(this << " " << m_ipv4->GetObject<Node>()->GetId() << " "
                                  << header.GetDestination());
-
+            // NS_LOG_ERROR("Route input of "<<m_mainAddress<<" "<<header.GetDestination());
             Ipv4Address dst = header.GetDestination();
             Ipv4Address origin = header.GetSource();
 
@@ -3099,21 +2909,6 @@ molsr::mac_failed(Ptr<Packet> p)
                 }
                 else
                 {
-#ifdef NS3_LOG_ENABLE
-                    NS_LOG_DEBUG("Olsr node " << m_mainAddress
-                                              << ": RouteInput for dest=" << header.GetDestination()
-                                              << " --> NOT FOUND; ** Dumping routing table...");
-
-                    for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator iter = m_table.begin();
-                         iter != m_table.end();
-                         iter++)
-                    {
-                        NS_LOG_DEBUG("dest=" << iter->first << " --> next=" << iter->second.nextAddr
-                                             << " via interface " << iter->second.interface);
-                    }
-
-                    NS_LOG_DEBUG("** Routing table dump end.");
-#endif // NS3_LOG_ENABLE
 
                     return false;
                 }
@@ -3230,7 +3025,7 @@ molsr::mac_failed(Ptr<Packet> p)
                     return i->neighborNodeType;
                 }
             }
-            NS_LOG_ERROR("Neighbor main address not foudn in neighbor set");
+            // NS_LOG_ERROR("Neighbor main address not foudn in neighbor set");
             return MessageHeader::NodeType::None;
         }
 
@@ -3278,36 +3073,6 @@ molsr::mac_failed(Ptr<Packet> p)
         void
         RoutingProtocol::Dump()
         {
-#ifdef NS3_LOG_ENABLE
-            Time now = Simulator::Now();
-            NS_LOG_DEBUG("Dumping for node with main address " << m_mainAddress);
-            NS_LOG_DEBUG(" Neighbor set");
-            for (NeighborSet::const_iterator iter = m_state.GetNeighbors().begin();
-                 iter != m_state.GetNeighbors().end();
-                 iter++)
-            {
-                NS_LOG_DEBUG("  " << *iter);
-            }
-            NS_LOG_DEBUG(" Two-hop neighbor set");
-            for (TwoHopNeighborSet::const_iterator iter = m_state.GetTwoHopNeighbors().begin();
-                 iter != m_state.GetTwoHopNeighbors().end();
-                 iter++)
-            {
-                if (now < iter->expirationTime)
-                {
-                    NS_LOG_DEBUG("  " << *iter);
-                }
-            }
-            NS_LOG_DEBUG(" Routing table");
-            for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator iter = m_table.begin();
-                 iter != m_table.end();
-                 iter++)
-            {
-                NS_LOG_DEBUG("  dest=" << iter->first << " --> next=" << iter->second.nextAddr
-                                       << " via interface " << iter->second.interface);
-            }
-            NS_LOG_DEBUG("");
-#endif // NS3_LOG_ENABLE
         }
 
         Ptr<const Ipv4StaticRouting>

@@ -38,7 +38,13 @@ namespace ns3
 
     clusterTogglePariticipants m_clusterToggleParticipants;
 
+    // map storing the node Address and its cluster Address
+    // This data is maintained by constant communication with RSUs
+    std::map<Ipv4Address,Ipv4Address> m_clusterMap;
+
   public:
+    Ipv4Address newCHAddr;
+
     // functions for state management
     Vector GetNodeVelocity() const;
 
@@ -52,6 +58,8 @@ namespace ns3
 
     void EraseNeighborEntry(Ipv4Address neigborAddr);
 
+    void EraseClusterMemberEntry(Ipv4Address addr);
+
     ClusterMemberEntry* FindClusterMember(Ipv4Address addr);
 
     void AddClusterMembers(Ipv4Address newMember);
@@ -63,6 +71,8 @@ namespace ns3
     void eraseClusterToggleParticipants(){
       this->m_clusterToggleParticipants.clear();
     }
+
+    void AddClusterMapEntry(Ipv4Address nodeAddr,Ipv4Address nodeCHAddr);
 
     // Getters and setters
     uint32_t GetNodeId() const;
@@ -88,6 +98,9 @@ namespace ns3
 
     clusterTogglePariticipants GetClusterToggleParticipants() const;
     void SetClusterToggleParticipants(const clusterTogglePariticipants &clusterToggleParticipants);
+
+    std::map<Ipv4Address,Ipv4Address> GetClusterMap() const;
+    void SetClusterMap(const std::map<Ipv4Address,Ipv4Address> &clusterMap);
   };
 } // namespace ns3
 

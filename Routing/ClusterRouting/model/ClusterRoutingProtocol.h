@@ -57,12 +57,14 @@ namespace ns3
     EventGarbageCollector m_events;
 
     // sending functions
-    void SendPacket(Ptr<Packet> packet);
+    void SendPacket(Ptr<Packet> packet,Ipv4Address toAddr=Ipv4Address());
     void SendHello();
     void SendClusterAdvertisement();
     void SendClusterToggleInitiateRequest();
     void SendClusterToggleParticipation();
-    void SendChChangeAdvertisement(Ptr<Packet> packet);
+    void SendChChangeAdvertisement();
+    void SendCHToggleAck();
+    void SendCHTransferData(Ipv4Address addr);
     void RecieveMsg(Ptr<Socket> socket);
 
     // sockets
@@ -98,7 +100,11 @@ namespace ns3
     void ProcessClusterToggleInitiate(ClusterMessageHeader message);
     void ProcessClusterToggleParticipation(ClusterMessageHeader message);
     void ProcessChChangeAdvertisement(ClusterMessageHeader message);
+    void ProcessChToggleAck(ClusterMessageHeader message);
+    void ProcessChTransferData(ClusterMessageHeader message);
 
+    // printing purpose
+    void PrintCluster();
 
     uint16_t GetMessageSequenceNumber();
     bool IsMyOwnAddress(Ipv4Address addr);

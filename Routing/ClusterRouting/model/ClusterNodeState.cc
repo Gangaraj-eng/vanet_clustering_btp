@@ -25,9 +25,10 @@ namespace ns3
     return velocity;
   }
 
-  double ClusterNodeState::GetEnergyLeft() const{
+  double ClusterNodeState::GetEnergyLeft() const
+  {
     return 0.0;
-  } 
+  }
 
   void ClusterNodeState::AddNeighbor(const NeighborEntry &nEntry)
   {
@@ -55,19 +56,35 @@ namespace ns3
       if (it->neighborAddress == neighborAddr)
       {
         m_neighbors.erase(it);
+        EraseClusterMemberEntry(neighborAddr);
         break;
       }
     }
   }
 
-    ClusterMemberEntry *ClusterNodeState::FindClusterMember(Ipv4Address cmAddr){
-        for(auto it=m_clusterMemberList.begin();it!=m_clusterMemberList.end();it++){
-          if(it->memberAddress==cmAddr){
-            return &(*it);
-          }
-        }
-        return nullptr;
+  void ClusterNodeState::EraseClusterMemberEntry(Ipv4Address addr)
+  {
+    for (auto it = m_clusterMemberList.begin(); it != m_clusterMemberList.end(); it++)
+    {
+      if (it->memberAddress == addr)
+      {
+        m_clusterMemberList.erase(it);
+        break;
+      }
     }
+  }
+
+  ClusterMemberEntry *ClusterNodeState::FindClusterMember(Ipv4Address cmAddr)
+  {
+    for (auto it = m_clusterMemberList.begin(); it != m_clusterMemberList.end(); it++)
+    {
+      if (it->memberAddress == cmAddr)
+      {
+        return &(*it);
+      }
+    }
+    return nullptr;
+  }
 
   void
   ClusterNodeState::AddClusterMembers(Ipv4Address newMember)
@@ -98,6 +115,11 @@ namespace ns3
     m_clusterToggleParticipants.emplace_back(ctp);
   }
 
+  void ClusterNodeState::AddClusterMapEntry(Ipv4Address nodeAddr, Ipv4Address nodeCHAddr)
+  {
+    m_clusterMap[nodeAddr] = nodeCHAddr;
+  }
+    
   // Getters and setters
   int ClusterNodeState::GetClusterId() const
   {
@@ -179,5 +201,15 @@ namespace ns3
   void ClusterNodeState::SetClusterMemberList(const ClusterMembers &clusterMemberList)
   {
     m_clusterMemberList = clusterMemberList;
+  }
+
+  std::map<Ipv4Address, Ipv4Address> ClusterNodeState::GetClusterMap() const
+  {
+    return m_clusterMap;
+  }
+
+  void ClusterNodeState::SetClusterMap(const std::map<Ipv4Address, Ipv4Address> &clusterMap)
+  {
+    m_clusterMap = clusterMap;
   }
 } // namespace ns3
