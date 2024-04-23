@@ -73,8 +73,6 @@ namespace ns3
     {
     }
 
-    
-
   } // namespace btp
 
 } // namespace ns3

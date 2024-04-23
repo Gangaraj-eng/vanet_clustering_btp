@@ -1,5 +1,5 @@
-#ifndef SIMULATION_PARAMETERS
-#define SIMULATION_PARAMETERS
+#ifndef UADCCONSTANTS_H
+#define UADCCONSTANTS_H
 
 #define UAV_ICON_PATH "/home/raju1234/ns-allinone-3.38/ns-3.38/src/btp/uavIcon.png"
 #define RSU_ICON_PATH "/home/raju1234/ns-allinone-3.38/ns-3.38/src/btp/roadSideUnitIcon.png"
@@ -61,4 +61,6 @@ enum MolsrMessageType
   (((time) < (Simulator::Now())) ? Seconds(0.000001) \
                                  : (time - Simulator::Now() + Seconds(0.000001)))
 
-#endif
+
+#endif // UADCCONSTANTS_H
+  

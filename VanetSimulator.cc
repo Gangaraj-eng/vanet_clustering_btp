@@ -254,5 +254,4 @@ void VanetSimulator::InstallApplications()
   ApplicationContainer ac2 = vnodeapphelper.Install(fanetNodes);
   ac2.Start(Seconds(0));
   ac2.Stop(Seconds(10));
- 
 }

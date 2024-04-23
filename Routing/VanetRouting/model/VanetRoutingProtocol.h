@@ -3,8 +3,8 @@
 
 /**
  * This header file contains the combined routing protocol
- * Three interfaces used with each of them running a different protocol
- * Appropriate interfaces are turned On and Off according to the requirement
+ * It uses three interface routing protocol objects
+ * and controls them accordingly
  */
 
 // Required header files
@@ -41,10 +41,16 @@ namespace ns3
       void PrintRoutingTable(Ptr<OutputStreamWrapper> stream,
                              Time::Unit unit = Time::S) const override;
 
-      private:
-        Ptr<Socket> m_crSendSocket;
-        Ptr<Socket> m_olsrSendSocket;
-        Ptr<Socket> m_qrSendSocket;
+    private:
+      // flags to control routings
+      bool m_crRunFlag;
+      bool m_olsrRungFlag;
+      bool m_qrRunFlag;
+
+      // interface indices to run protocols
+      int16_t m_crInterfaceIndex;
+      int16_t m_olsrInterfaceIndex;
+      int16_t m_qrInterfaceIndex;
     };
   } // namespace btp
 
