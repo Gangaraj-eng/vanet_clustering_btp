@@ -1,41 +1,25 @@
 build_lib(
-  LIBNAME btp 
-  SOURCE_FILES  
-  Nodes/VANET/VanetNode.cc
-  Nodes/FANET/FanetNode.cc
-  Routing/ClusterRouting/helper/ClusterRoutingHelper.cc
-  Routing/ClusterRouting/model/ClusterRoutingProtocol.cc
-  Routing/ClusterRouting/model/ClusterRoutingHeader.cc
-  Routing/ClusterRouting/model/ClusterNodeState.cc
-  Routing/MolsrRouting/helper/molsr-helper.cc
-  Routing/MolsrRouting/model/molsr-header.cc
-  Routing/MolsrRouting/model/molsr-state.cc
-  Routing/MolsrRouting/model/molsr-routing-protocol.cc
-  Application/model/VanetNodeApplication.cc
-  Application/helper/VanetNodeApplicationHelper.cc
-  Nodes/RSU/RSUNode.cc
+  LIBNAME btp
 
-  Routing/VanetRouting/helper/VanetRoutingHelper.cc
-  Routing/VanetRouting/model/VanetRoutingProtocol.cc
+  SOURCE_FILES
+
+  VanetRouting/helper/VanetRoutingHelper.cc
+  VanetRouting/model/VanetRoutingProtocol.cc
+
+  Application/helper/VanetApplicationHelper.cc
+  Application/model/VanetApplication.cc
+  
   HEADER_FILES
-  Nodes/VANET/VanetNode.h
-  Nodes/FANET/FanetNode.h
-  Nodes/RSU/RSUNode.h
-  UADCConstants.h
-  Routing/ClusterRouting/helper/ClusterRoutingHelper.h
-  Routing/ClusterRouting/model/ClusterRoutingProtocol.h
-  Routing/ClusterRouting/model/ClusterRoutingHeader.h
-  Routing/ClusterRouting/model/ClusterNodeState.h
-  Routing/ClusterRouting/model/ClusterRoutingRepository.h
-  Routing/MolsrRouting/helper/molsr-helper.h
-  Routing/MolsrRouting/model/molsr-header.h
-  Routing/MolsrRouting/model/molsr-state.h
-  Routing/MolsrRouting/model/molsr-repositories.h
-  Routing/MolsrRouting/model/molsr-routing-protocol.h
-  Application/model/VanetNodeApplication.h
-  Application/helper/VanetNodeApplicationHelper.h
+  
+  SimulationParameters.h
+  
+  VanetRouting/helper/VanetRoutingHelper.h
+  VanetRouting/model/VanetRoutingProtocol.h
+  VanetRouting/model/VanetRoutingRepository.h
 
-  Routing/VanetRouting/helper/VanetRoutingHelper.h
-  Routing/VanetRouting/model/VanetRoutingProtocol.h
+  Application/helper/VanetApplicationHelper.h
+  Application/model/VanetApplication.h
+  Application/model/VanetApplicationRepository.h
+
   LIBRARIES_TO_LINK ${libinternet}
 )

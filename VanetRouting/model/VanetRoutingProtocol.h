@@ -41,6 +41,10 @@ namespace ns3
       void PrintRoutingTable(Ptr<OutputStreamWrapper> stream,
                              Time::Unit unit = Time::S) const override;
 
+  protected:
+    void DoInitialize() override;
+    void DoDispose() override;
+
     private:
       // flags to control routings
       bool m_crRunFlag;
@@ -51,6 +55,9 @@ namespace ns3
       int16_t m_crInterfaceIndex;
       int16_t m_olsrInterfaceIndex;
       int16_t m_qrInterfaceIndex;
+
+      // main main things
+      Ptr<Ipv4> m_ipv4;
     };
   } // namespace btp
 

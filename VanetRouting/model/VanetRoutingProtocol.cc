@@ -5,6 +5,14 @@
  */
 
 // Required header files
+#include "ns3/node.h"
+
+// add node id at beginning
+#define NS_LOG_APPEND_CONTEXT                                    \
+  if (GetObject<Node>())                                         \
+  {                                                              \
+    std::clog << "[node " << GetObject<Node>()->GetId() << ":IP] "; \
+  }
 
 namespace ns3
 {
@@ -68,8 +76,18 @@ namespace ns3
     }
     void VanetRoutingProtocol::SetIpv4(Ptr<Ipv4> ipv4)
     {
+      m_ipv4 = ipv4;
     }
     void VanetRoutingProtocol::PrintRoutingTable(Ptr<OutputStreamWrapper> stream, Time::Unit unit) const
+    {
+    }
+
+    void VanetRoutingProtocol::DoInitialize()
+    {
+      NS_LOG_INFO(m_ipv4->GetNInterfaces());
+    }
+
+    void VanetRoutingProtocol::DoDispose()
     {
     }
 

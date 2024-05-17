@@ -5,48 +5,67 @@
 #include "ns3/network-module.h"
 #include "ns3/netanim-module.h"
 #include "ns3/yans-wifi-helper.h"
-#include "ns3/VanetNode.h"
-#include "ns3/FanetNode.h"
-#include "ns3/ClusterRoutingHelper.h"
-#include "ns3/VanetNodeApplicationHelper.h"
-#include "ns3/molsr-helper.h"
-#include "ns3/UADCConstants.h"
 
+// our header files
+#include "ns3/SimulationParameters.h"
+#include "ns3/VanetApplicationHelper.h"
+#include "ns3/VanetRoutingHelper.h"
+
+/**
+ * Create and Run Vanet
+ */
 using namespace ns3;
-
 NS_LOG_COMPONENT_DEFINE("VanetSimulator");
 
+// Helper class for Vanet Simulation
 class VanetSimulator
 {
 public:
   VanetSimulator();
+  ~VanetSimulator();
   void Run();
 
-private:
-  int nVanetNodes;
-  int nfanetNodes;
-  NodeContainer vanetNodes;
-  NodeContainer fanetNodes;
-  NetDeviceContainer vanetDevices;
-  NetDeviceContainer fanetDevices;
-  std::vector<Vector> fanetPositions;
-  double simulationTime; // in seconds
-  Ipv4InterfaceContainer interfaces;
-  SimulationParamters mParameters;
-
-private:
+  // create nodes
   void CreateNodes();
   void InstallMobilityModel();
-  void InstallFanetMobilityModel();
-  void InstallEnergyModel(); // TODO
-  void CreateVanetDevices();
-  void CreateUAVDevices();
+  void CreateNetDevices();
+  void InstallEnergyModel();
   void InstallInternetStack();
-  void InstallApplications();
+  void InstallApplication();
+
+  // Node specific mobilities
+  void InstallVanetMobility();
+  void InstallFanetMobility();
+  void InstallRsuMobility();
+
+  // Node specific devices
+  void CreateCrDevices();
+  void CreateOlsrDevices();
+  void CreateQrDevices();
+
   void ConfigureAnimation(AnimationInterface &anim);
+
+private:
+  NodeContainer vanetNodes;
+  NodeContainer fanetNodes;
+  NodeContainer rsuNodes;
+
+  NetDeviceContainer olsrDevices;
+  NetDeviceContainer qrDevices;
+  NetDeviceContainer crDevices;
+
+  int m_numVanetNodes;
+  int m_numFanetNodes;
+  int m_numRsuNodes;
+
+  Time totalSimulationTime;
+
+  // to store the constant node positions
+  std::vector<Vector> m_fanetPositions;
+  std::vector<Vector> m_rsuPositions;
 };
 
-int main()
+int main(int argc, char *argv[])
 {
   VanetSimulator vanet;
   vanet.Run();
@@ -55,87 +74,115 @@ int main()
 
 VanetSimulator::VanetSimulator()
 {
-  nVanetNodes = mParameters.numVanetNodes;
-  nfanetNodes = mParameters.numFanetNodes;
-  simulationTime = mParameters.TotalSimulationTime;
+
+  m_numVanetNodes = NUM_VANET_NODES;
+  m_numFanetNodes = NUM_FANET_NODES;
+  m_numRsuNodes = NUM_RSU_NODES;
+
+  totalSimulationTime = Seconds(TOTAL_SIMULATION_TIME);
+}
+
+VanetSimulator::~VanetSimulator()
+{
 }
 
 void VanetSimulator::Run()
 {
-  CreateNodes();
-  CreateVanetDevices();
-  CreateUAVDevices();
-  InstallInternetStack();
-  InstallApplications();
 
-  std::cout << "Initialized VANET\n";
-  // output file for NetAnim
+  CreateNodes();
+  CreateNetDevices();
+  InstallInternetStack();
+  InstallApplication();
+
   AnimationInterface anim("VanetSimulator.xml");
   ConfigureAnimation(anim);
 
-  Simulator::Stop(Seconds(simulationTime));
+  Simulator::Stop(totalSimulationTime);
   Simulator::Run();
   Simulator::Destroy();
 }
 
-void VanetSimulator::ConfigureAnimation(AnimationInterface &anim)
-{
-  int vehicleNodeIconId = anim.AddResource(VANETNODE_ICON_PATH);
-  // int rsuNodeIconId = anim.AddResource(RSU_ICON_PATH);
-  int uavNodeIconId = anim.AddResource(UAV_ICON_PATH);
-  for (int i = 0; i < nVanetNodes; i++)
-  {
-    anim.UpdateNodeImage(vanetNodes.Get(i)->GetId(), vehicleNodeIconId);
-    anim.UpdateNodeSize(vanetNodes.Get(i)->GetId(), 30, 30);
-  }
-  for (int i = 0; i < nfanetNodes; i++)
-  {
-    anim.UpdateNodeImage(fanetNodes.Get(i)->GetId(), uavNodeIconId);
-    anim.SetConstantPosition(fanetNodes.Get(i), fanetPositions[i].x, fanetPositions[i].y, fanetPositions[i].z);
-    anim.UpdateNodeSize(fanetNodes.Get(i)->GetId(), 70, 70);
-  }
-}
-
 void VanetSimulator::CreateNodes()
 {
-  // Create nodes and name them
-  for (int i = 0; i < nVanetNodes; i++)
-  {
-    Ptr<VanetNode> node = CreateObject<VanetNode>();
-    node->SetNodeId(i);
-    // std::string nodeId = "vnode" + std::to_string(i + 1);
-    // Names::Add(nodeId, vanetNodes.Get(i));
-    vanetNodes.Add(node);
-  }
-
-  for (int i = 0; i < nfanetNodes; i++)
-  {
-    Ptr<FanetNode> node = CreateObject<FanetNode>();
-    fanetNodes.Add(node);
-  }
-
+  vanetNodes.Create(m_numVanetNodes);
+  fanetNodes.Create(m_numFanetNodes);
+  rsuNodes.Create(m_numRsuNodes);
   InstallMobilityModel();
-  InstallFanetMobilityModel();
 }
 
 void VanetSimulator::InstallMobilityModel()
 {
+  InstallVanetMobility();
+  InstallFanetMobility();
+  InstallRsuMobility();
+}
+
+void VanetSimulator::CreateNetDevices()
+{
+  CreateCrDevices();
+  CreateOlsrDevices();
+  CreateQrDevices();
+  // std::cout<<"Num cR Devices "<<crDevices.GetN()<<std::endl;
+  // std::cout<<"Num OLSR Devices "<<olsrDevices.GetN()<<std::endl;
+  // std::cout<<"Num QR Devices "<<qrDevices.GetN()<<std::endl;
+}
+
+void VanetSimulator::InstallEnergyModel()
+{
+}
+
+void VanetSimulator::InstallInternetStack()
+{
+
+  LogComponentEnable("VanetRoutingProtocol",LOG_LEVEL_INFO);
+
+  InternetStackHelper stack;
+  btp::VanetRoutingHelper vanetRouting;
+  Ipv4AddressHelper addressHelper;
+  stack.SetRoutingHelper(vanetRouting);
+
+  stack.Install(vanetNodes);
+  stack.Install(fanetNodes);
+  stack.Install(rsuNodes);
+
+  addressHelper.SetBase("10.0.0.0", "255.255.0.0");
+  addressHelper.Assign(crDevices);
+  addressHelper.SetBase("10.1.0.0", "255.255.0.0");
+  addressHelper.Assign(olsrDevices);
+  addressHelper.SetBase("10.2.0.0", "255.255.0.0");
+  addressHelper.Assign(qrDevices);
+}
+
+void VanetSimulator::InstallApplication()
+{
+  btp::VanetApplicationHelper vanetApp;
+  ApplicationContainer app = vanetApp.Install(vanetNodes);
+  app.Start(Seconds(VANET_APP_START_TIME));
+  app.Stop(totalSimulationTime);
+}
+
+void VanetSimulator::InstallVanetMobility()
+{
+  if (m_numVanetNodes == 0)
+  {
+    return;
+  }
+
   MobilityHelper mobility;
   ObjectFactory pos;
   pos.SetTypeId("ns3::RandomBoxPositionAllocator");
-  std::stringstream ssDimX;
-  ssDimX << "ns3::UniformRandomVariable[Min=0.0|Max=" << mParameters.simulationDimension << "]";
-  pos.Set("X", StringValue(ssDimX.str()));
-  pos.Set("Y", StringValue(ssDimX.str()));
-  // we need antenna height uniform [1.0 .. 2.0] for loss model
-  // pos.Set("Z", StringValue("ns3::UniformRandomVariable[Min=1.0|Max=2.0]"));
+  std::stringstream ssDim;
+  ssDim << "ns3::UniformRandomVariable[Min=0.0|Max=" << AREA_LENGTH << "]";
+  pos.Set("X", StringValue(ssDim.str()));
+  pos.Set("Y", StringValue(ssDim.str()));
 
   Ptr<PositionAllocator> positionAllocator = pos.Create()->GetObject<PositionAllocator>();
   mobility.SetPositionAllocator(positionAllocator);
+
   std::stringstream ssSpeed;
-  ssSpeed << "ns3::UniformRandomVariable[Min=0.0|Max=" << 30 << "]";
+  ssSpeed << "ns3::UniformRandomVariable[Min=" << VEHICLE_MIN_SPEED << "|Max=" << VEHICLE_MAX_SPEED << "]";
   std::stringstream ssPause;
-  ssPause << "ns3::ConstantRandomVariable[Constant=" << 5 << "]";
+  ssPause << "ns3::ConstantRandomVariable[Constant=" << VEHICLE_PAUSE_TIME << "]";
   mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel",
                             "Speed",
                             StringValue(ssSpeed.str()),
@@ -147,41 +194,66 @@ void VanetSimulator::InstallMobilityModel()
   mobility.Install(vanetNodes);
 }
 
-// place UAVs uniformly in the grid
-void VanetSimulator::InstallFanetMobilityModel()
+void VanetSimulator::InstallFanetMobility()
 {
-  int numNodes = nfanetNodes;
-  double gridSize = mParameters.simulationDimension;
-  double spacing = gridSize / 3.0;
-
-  // Define node positions based on grid coordinates
-  Ptr<ListPositionAllocator> positionAlloc_n = CreateObject<ListPositionAllocator>();
-
-  fanetPositions.resize(numNodes);
-  for (int i = 0; i < numNodes; ++i)
+  if (m_numFanetNodes == 0)
   {
-    uint32_t row = i / 3;
-    uint32_t col = i % 3;
-    double x = col * spacing + spacing / 2;
-    double y = row * spacing + spacing / 2;
-    fanetPositions[i] = Vector(x, y, 100.0);
-    positionAlloc_n->Add(fanetPositions[i]);
+    return;
   }
 
-  // Create and set constant position mobility model for each node
+  double spacing = AREA_LENGTH/4;
+
+  m_fanetPositions.resize(m_numFanetNodes);
+
+  Ptr<ListPositionAllocator> m_listPositionAlloc = CreateObject<ListPositionAllocator>();
+  for (int i = 0; i < m_numFanetNodes; i++)
+  {
+    Vector pos;
+    int row=i/3,col=i%3;
+    pos.x = (row+1)*spacing;
+    pos.y = (col+1)*spacing;
+    pos.z = UAV_ALTITUDE;
+    m_fanetPositions[i] = pos;
+    m_listPositionAlloc->Add(pos);
+  }
+
   MobilityHelper mobility;
   mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-  mobility.SetPositionAllocator(positionAlloc_n);
+  mobility.SetPositionAllocator(m_listPositionAlloc);
   mobility.Install(fanetNodes);
 }
 
-void VanetSimulator::InstallEnergyModel()
+void VanetSimulator::InstallRsuMobility()
 {
+  if (m_numRsuNodes == 0)
+  {
+    return;
+  }
+
+  double spacing = AREA_LENGTH / sqrt(m_numRsuNodes);
+
+  m_rsuPositions.resize(m_numRsuNodes);
+  Ptr<ListPositionAllocator> m_listPositionAlloc = CreateObject<ListPositionAllocator>();
+  for (int i = 0; i < m_numRsuNodes; i++)
+  {
+    Vector pos;
+    int row = i / (int)sqrt(m_numRsuNodes);
+    int col = i % (int)sqrt(m_numRsuNodes);
+    pos.x = row*spacing + spacing / 2;
+    pos.y = col*spacing + spacing / 2;
+    pos.z = 0;
+    m_rsuPositions[i] = pos;
+    m_listPositionAlloc->Add(pos);
+  }
+
+  MobilityHelper mobility;
+  mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  mobility.SetPositionAllocator(m_listPositionAlloc);
+  mobility.Install(rsuNodes);
 }
 
-void VanetSimulator::CreateVanetDevices()
+void VanetSimulator::CreateCrDevices()
 {
-
   // creating wifi devices
   WifiMacHelper wifiMac;
   wifiMac.SetType("ns3::AdhocWifiMac");
@@ -190,20 +262,44 @@ void VanetSimulator::CreateVanetDevices()
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
   wifiPhy.SetChannel(wifiChannel.Create());
 
-  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(mParameters.VanetNodeRange)));
-  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(mParameters.VanetNodeRange)));
+  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(VANET_RANGE)));
+  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(VANET_RANGE)));
   WifiHelper wifi;
   wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
                                "DataMode",
                                StringValue("OfdmRate6Mbps"),
                                "RtsCtsThreshold",
                                UintegerValue(0));
-  vanetDevices = wifi.Install(wifiPhy, wifiMac, vanetNodes);
+  crDevices = wifi.Install(wifiPhy, wifiMac, vanetNodes);
 }
 
-void VanetSimulator::CreateUAVDevices()
+void VanetSimulator::CreateOlsrDevices()
 {
+  WifiMacHelper wifiMac;
+  wifiMac.SetType("ns3::AdhocWifiMac");
 
+  YansWifiPhyHelper wifiPhy;
+  YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
+  wifiPhy.SetChannel(wifiChannel.Create());
+
+  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(UAV_RANGE)));
+  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(UAV_RANGE)));
+  WifiHelper wifi;
+  wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
+                               "DataMode",
+                               StringValue("OfdmRate6Mbps"),
+                               "RtsCtsThreshold",
+                               UintegerValue(0));
+  olsrDevices.Add(wifi.Install(wifiPhy, wifiMac, fanetNodes));
+
+  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(VANET_RANGE)));
+  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(VANET_RANGE)));
+
+  olsrDevices.Add(wifi.Install(wifiPhy, wifiMac, vanetNodes));
+}
+
+void VanetSimulator::CreateQrDevices()
+{
   // creating wifi devices
   WifiMacHelper wifiMac;
   wifiMac.SetType("ns3::AdhocWifiMac");
@@ -212,46 +308,46 @@ void VanetSimulator::CreateUAVDevices()
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
   wifiPhy.SetChannel(wifiChannel.Create());
 
-  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(mParameters.FanetNodeRange)));
-  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(mParameters.FanetNodeRange)));
+  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(RSU_RANGE)));
+  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(RSU_RANGE)));
   WifiHelper wifi;
   wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
                                "DataMode",
                                StringValue("OfdmRate6Mbps"),
                                "RtsCtsThreshold",
                                UintegerValue(0));
-  fanetDevices = wifi.Install(wifiPhy, wifiMac, fanetNodes);
+  qrDevices.Add(wifi.Install(wifiPhy, wifiMac, rsuNodes));
+
+  wifiPhy.Set("TxPowerStart", DoubleValue(15.0 * log10(VANET_RANGE)));
+  wifiPhy.Set("TxPowerEnd", DoubleValue(15.0 * log10(VANET_RANGE)));
+
+  qrDevices.Add(wifi.Install(wifiPhy, wifiMac, vanetNodes));
 }
 
-// Set your routing protocol in internet stack
-void VanetSimulator::InstallInternetStack()
+void VanetSimulator::ConfigureAnimation(AnimationInterface &anim)
 {
-  ClusterRoutingHelper crhelper;
-  MolsrHelper mhelper;
-  LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
-  LogComponentEnable("ClusterPacketHeader", LOG_LEVEL_INFO);
-  LogComponentEnable("MolsrRoutingProtocol", LOG_LEVEL_ERROR);
-  InternetStackHelper stack;
-  // stack.SetRoutingHelper(crhelper);
-  // stack.SetRoutingHelper(mhelper);
-  // stack.Install(vanetNodes);
-  stack.SetRoutingHelper(mhelper);
-  stack.Install(fanetNodes);
-  Ipv4AddressHelper address;
-  // NetDeviceContainer combined;
-  // combined.Add(fanetDevices);
-  // combined.Add(vanetDevices);
-  address.SetBase("10.0.0.0", "255.0.0.0");
-  interfaces = address.Assign(fanetDevices);
-}
+  int vehicleIconId = anim.AddResource(VANETNODE_ICON_PATH);
+  int UavIconId = anim.AddResource(UAV_ICON_PATH);
+  int rsuIconId = anim.AddResource(RSU_ICON_PATH);
 
-// set your application
-void VanetSimulator::InstallApplications()
-{
-  VanetNodeApplicationHelper vnodeapphelper;
-  LogComponentEnable("VanetNodeApplication", LOG_LEVEL_INFO);
-  // ApplicationContainer ac = vnodeapphelper.Install(vanetNodes);
-  ApplicationContainer ac2 = vnodeapphelper.Install(fanetNodes);
-  ac2.Start(Seconds(0));
-  ac2.Stop(Seconds(10));
+  // setting icons
+  for (int i = 0; i < m_numVanetNodes; i++)
+  {
+    anim.UpdateNodeImage(vanetNodes.Get(i)->GetId(), vehicleIconId);
+    anim.UpdateNodeSize(vanetNodes.Get(i)->GetId(), 30, 30);
+  }
+
+  for (int i = 0; i < m_numFanetNodes; i++)
+  {
+    anim.UpdateNodeImage(fanetNodes.Get(i)->GetId(), UavIconId);
+    anim.UpdateNodeSize(fanetNodes.Get(i)->GetId(), 60, 60);
+    anim.SetConstantPosition(fanetNodes.Get(i), m_fanetPositions[i].x, m_fanetPositions[i].y, m_fanetPositions[i].z);
+  }
+
+  for (int i = 0; i < m_numRsuNodes; i++)
+  {
+    anim.UpdateNodeImage(rsuNodes.Get(i)->GetId(), rsuIconId);
+    anim.UpdateNodeSize(rsuNodes.Get(i)->GetId(), 40, 40);
+    anim.SetConstantPosition(rsuNodes.Get(i), m_rsuPositions[i].x, m_rsuPositions[i].y, m_rsuPositions[i].z);
+  }
 }
