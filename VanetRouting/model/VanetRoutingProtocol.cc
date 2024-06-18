@@ -5,13 +5,14 @@
  */
 
 // Required header files
-#include "ns3/node.h"
+#include "ns3/CustomNode.h"
+#include "VanetRoutingRepository.h"
 
 // add node id at beginning
-#define NS_LOG_APPEND_CONTEXT                                    \
-  if (GetObject<Node>())                                         \
-  {                                                              \
-    std::clog << "[node " << GetObject<Node>()->GetId() << ":IP] "; \
+#define NS_LOG_APPEND_CONTEXT                                       \
+  if (GetObject<Node>())                                            \
+  {                                                                 \
+    std::clog << "[node " << GetObject<Node>()->GetId() << ":VR] "; \
   }
 
 namespace ns3
@@ -77,6 +78,10 @@ namespace ns3
     void VanetRoutingProtocol::SetIpv4(Ptr<Ipv4> ipv4)
     {
       m_ipv4 = ipv4;
+      
+      m_OlsrRoutingProtocol.SetIpv4(ipv4);
+      m_QueryRoutingProtocol.SetIpv4(ipv4);
+      m_ClusterRoutingProtocol.SetIpv4(ipv4);
     }
     void VanetRoutingProtocol::PrintRoutingTable(Ptr<OutputStreamWrapper> stream, Time::Unit unit) const
     {
@@ -84,7 +89,11 @@ namespace ns3
 
     void VanetRoutingProtocol::DoInitialize()
     {
-      NS_LOG_INFO(m_ipv4->GetNInterfaces());
+      NodeType currentNodeType = DynamicCast<CustomNode>(GetObject<Node>())->mnodeType;
+      m_OlsrRoutingProtocol.Initialize();
+      m_QueryRoutingProtocol.Initialize();
+      m_ClusterRoutingProtocol.Initialize();
+      NS_LOG_INFO("Started Vanet Routing Protocol");
     }
 
     void VanetRoutingProtocol::DoDispose()

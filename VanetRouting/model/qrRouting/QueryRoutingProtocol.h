@@ -1,27 +1,19 @@
-#ifndef VANET_ROUTING_PROTOCOL_H
-#define VANET_ROUTING_PROTOCOL_H
-
-/**
- * This header file contains the combined routing protocol
- * It uses three interface routing protocol objects
- * and controls them accordingly
- */
+#ifndef QUERY_ROUTING_PROTOCOL_H
+#define QUERY_ROUTING_PROTOCOL_H
 
 // Required header files
 #include "ns3/ipv4-routing-protocol.h"
-#include "ns3/QueryRoutingProtocol.h"
-#include "ns3/OlsrRoutingProtocol.h"
-#include "ns3/ClusterRoutingProtocol.h"
 
 namespace ns3
 {
   namespace btp
   {
-    class VanetRoutingProtocol : public Ipv4RoutingProtocol
+    class QueryRoutingProtocol : public Ipv4RoutingProtocol
     {
     public:
-      VanetRoutingProtocol();
-      ~VanetRoutingProtocol();
+      QueryRoutingProtocol();
+      ~QueryRoutingProtocol();
+
       static TypeId GetTypeId();
 
       // parent class methods
@@ -43,32 +35,10 @@ namespace ns3
       void SetIpv4(Ptr<Ipv4> ipv4) override;
       void PrintRoutingTable(Ptr<OutputStreamWrapper> stream,
                              Time::Unit unit = Time::S) const override;
-
+                             
     protected:
       void DoInitialize() override;
       void DoDispose() override;
-
-    private:
-      // flags to control routings
-      bool m_crRunFlag;
-      bool m_olsrRungFlag;
-      bool m_qrRunFlag;
-
-      // interface indices to run protocols
-      int16_t m_crInterfaceIndex;
-      int16_t m_olsrInterfaceIndex;
-      int16_t m_qrInterfaceIndex;
-
-      // Routing protocol objects
-      OlsrRoutingProtocol m_OlsrRoutingProtocol;
-      QueryRoutingProtocol m_QueryRoutingProtocol;
-      ClusterRoutingProtocol m_ClusterRoutingProtocol;
-
-
-      // main main things
-      Ptr<Ipv4> m_ipv4;
-
-      // some helper functions
     };
   } // namespace btp
 

@@ -10,6 +10,8 @@
 #include "ns3/SimulationParameters.h"
 #include "ns3/VanetApplicationHelper.h"
 #include "ns3/VanetRoutingHelper.h"
+#include "ns3/VanetRoutingRepository.h"
+#include  "ns3/CustomNode.h"
 
 /**
  * Create and Run Vanet
@@ -104,9 +106,28 @@ void VanetSimulator::Run()
 
 void VanetSimulator::CreateNodes()
 {
-  vanetNodes.Create(m_numVanetNodes);
-  fanetNodes.Create(m_numFanetNodes);
-  rsuNodes.Create(m_numRsuNodes);
+  // vanetNodes.Create(m_numVanetNodes);
+  Ptr<btp::CustomNode> cnode;
+  for(int i=0;i<m_numVanetNodes;i++){
+    cnode = CreateObject<btp::CustomNode>();
+    cnode->mnodeType=NodeType::CLUSTER_HEAD;
+    vanetNodes.Add(cnode);
+  }
+
+  // fanetNodes.Create(m_numFanetNodes);
+  for(int i=0;i<m_numFanetNodes;i++){
+    cnode = CreateObject<btp::CustomNode>();
+    cnode->mnodeType=NodeType::UAV;
+    fanetNodes.Add(cnode);
+  }
+
+  // rsuNodes.Create(m_numRsuNodes);
+  for(int i=0;i<m_numRsuNodes;i++){
+    cnode = CreateObject<btp::CustomNode>();
+    cnode->mnodeType=NodeType::RSU;
+    rsuNodes.Add(cnode);
+  }
+
   InstallMobilityModel();
 }
 
@@ -134,7 +155,10 @@ void VanetSimulator::InstallEnergyModel()
 void VanetSimulator::InstallInternetStack()
 {
 
-  LogComponentEnable("VanetRoutingProtocol",LOG_LEVEL_INFO);
+  LogComponentEnable("VanetRoutingProtocol", LOG_LEVEL_INFO);
+  LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
+  LogComponentEnable("OlsrRoutingProtocol", LOG_LEVEL_INFO);
+  LogComponentEnable("QueryRoutingProtocol", LOG_LEVEL_INFO);
 
   InternetStackHelper stack;
   btp::VanetRoutingHelper vanetRouting;
@@ -201,7 +225,7 @@ void VanetSimulator::InstallFanetMobility()
     return;
   }
 
-  double spacing = AREA_LENGTH/4;
+  double spacing = AREA_LENGTH / 4;
 
   m_fanetPositions.resize(m_numFanetNodes);
 
@@ -209,9 +233,9 @@ void VanetSimulator::InstallFanetMobility()
   for (int i = 0; i < m_numFanetNodes; i++)
   {
     Vector pos;
-    int row=i/3,col=i%3;
-    pos.x = (row+1)*spacing;
-    pos.y = (col+1)*spacing;
+    int row = i / 3, col = i % 3;
+    pos.x = (row + 1) * spacing;
+    pos.y = (col + 1) * spacing;
     pos.z = UAV_ALTITUDE;
     m_fanetPositions[i] = pos;
     m_listPositionAlloc->Add(pos);
@@ -239,8 +263,8 @@ void VanetSimulator::InstallRsuMobility()
     Vector pos;
     int row = i / (int)sqrt(m_numRsuNodes);
     int col = i % (int)sqrt(m_numRsuNodes);
-    pos.x = row*spacing + spacing / 2;
-    pos.y = col*spacing + spacing / 2;
+    pos.x = row * spacing + spacing / 2;
+    pos.y = col * spacing + spacing / 2;
     pos.z = 0;
     m_rsuPositions[i] = pos;
     m_listPositionAlloc->Add(pos);
