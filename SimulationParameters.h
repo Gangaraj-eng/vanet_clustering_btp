@@ -8,9 +8,9 @@
 
 // number of nodes
 // experiment with different number of vanet  nodes
-#define NUM_VANET_NODES 50
-#define NUM_FANET_NODES 9
-#define NUM_RSU_NODES 16
+#define NUM_VANET_NODES 1
+#define NUM_FANET_NODES 0
+#define NUM_RSU_NODES 0
 
 // Dimensions of simulation
 #define AREA_LENGTH 1000

@@ -12,11 +12,11 @@ namespace ns3
 {
   namespace btp
   {
-    class OlsrRoutingProtocol : public Ipv4RoutingProtocol
+    class OLSRRoutingProtocol : public Ipv4RoutingProtocol
     {
     public:
-      OlsrRoutingProtocol();
-      ~OlsrRoutingProtocol();
+      OLSRRoutingProtocol();
+      ~OLSRRoutingProtocol();
 
       static TypeId GetTypeId();
 
@@ -43,6 +43,15 @@ namespace ns3
     protected:
       void DoInitialize() override;
       void DoDispose() override;
+
+    private:
+      Ipv4Address m_mainAddress;
+      uint32_t m_mainInterfaceIndex;
+      
+      // main main things
+      Ptr<Ipv4> m_ipv4;
+    public:
+      void SetMainInterface(uint32_t interfaceIndex);
     };
 
   } // namespace btp

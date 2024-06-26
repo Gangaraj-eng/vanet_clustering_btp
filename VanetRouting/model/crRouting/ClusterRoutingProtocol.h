@@ -2,6 +2,9 @@
 #define CLUSTER_ROUTING_PROTOCOL_H
 
 #include "ns3/ipv4-routing-protocol.h"
+#include "ns3/timer.h"
+#include "ns3/nstime.h"
+#include "ns3/VanetRoutingRepository.h"
 
 namespace ns3
 {
@@ -38,6 +41,39 @@ namespace ns3
     protected:
       void DoInitialize() override;
       void DoDispose() override;
+
+      // required state variables
+    private:
+      NodeType mNodeType;       // type of cluster node - CH/CM
+      Ipv4Address m_mainAddress; // interface address used for this protocol
+      uint32_t m_mainInterfaceIndex; // index of the interface used 
+
+      // sockets
+      // one for recieving and one for sending
+      Ptr<Socket> m_sendSocket;
+      Ptr<Socket> m_recvSocket;
+
+      // Times
+      Time m_helloInterval;
+      Time m_clusterAdvertisementInterval; // time interval between cluster advertisements
+      Time m_chToggleIntiateWaitTime;
+
+      // Timers
+      Timer m_helloTimer;
+      Timer m_clusterAdvertisementTimer;
+      Timer m_clusterToggleInitiateTimer;
+      Timer m_evaluateNewClusterTimer;
+      Timer m_sendClsuterToggleParticipation;
+
+       // main main things
+      Ptr<Ipv4> m_ipv4;
+
+    private:
+    void RecieveMsg(Ptr<Socket> socket);
+
+    public:
+      void SetMainInterface(uint32_t interfaceIndex);
+
     };
   } // namespace btp
 

@@ -69,6 +69,7 @@ namespace ns3
 
     void QueryRoutingProtocol::SetIpv4(Ptr<Ipv4> ipv4)
     {
+      m_ipv4 = ipv4;
     }
 
     void QueryRoutingProtocol::PrintRoutingTable(Ptr<OutputStreamWrapper> stream, Time::Unit unit) const
@@ -77,13 +78,20 @@ namespace ns3
 
     void QueryRoutingProtocol::DoInitialize()
     {
-      NS_LOG_INFO("Hello from Query routing Protocol");
+      m_mainAddress = m_ipv4->GetAddress(m_mainInterfaceIndex,0).GetLocal();
+      Ptr<Node> node = m_ipv4->GetObject<Node>();
+
+      // NS_LOG_INFO("Hello from Query routing Protocol "<<m_mainAddress);
     }
 
     void QueryRoutingProtocol::DoDispose()
     {
     }
 
+    void QueryRoutingProtocol::SetMainInterface(uint32_t interfaceIndex)
+    {
+      m_mainInterfaceIndex = interfaceIndex;
+    } 
     // Define and register the component
   } // namespace btp
 

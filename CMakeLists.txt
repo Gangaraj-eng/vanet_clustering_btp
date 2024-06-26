@@ -8,7 +8,7 @@ build_lib(
 
   VanetRouting/model/crRouting/ClusterRoutingProtocol.cc
   VanetRouting/model/qrRouting/QueryRoutingProtocol.cc
-  VanetRouting/model/olsrRouting/OlsrRoutingProtocol.cc
+  VanetRouting/model/olsrRouting/OLSRRoutingProtocol.cc
 
   Application/helper/VanetApplicationHelper.cc
   Application/model/VanetApplication.cc
@@ -25,7 +25,7 @@ build_lib(
 
   VanetRouting/model/crRouting/ClusterRoutingProtocol.h
   VanetRouting/model/qrRouting/QueryRoutingProtocol.h
-  VanetRouting/model/olsrRouting/OlsrRoutingProtocol.h
+  VanetRouting/model/olsrRouting/OLSRRoutingProtocol.h
 
   Application/helper/VanetApplicationHelper.h
   Application/model/VanetApplication.h

@@ -11,7 +11,7 @@ namespace ns3
       class CustomNode:public Node{
           public:
             CustomNode();
-          NodeType mnodeType;
+            NodeType mnodeType;
       };
   } // namespace btp
 

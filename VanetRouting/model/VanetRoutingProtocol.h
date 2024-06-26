@@ -10,7 +10,7 @@
 // Required header files
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/QueryRoutingProtocol.h"
-#include "ns3/OlsrRoutingProtocol.h"
+#include "ns3/OLSRRoutingProtocol.h"
 #include "ns3/ClusterRoutingProtocol.h"
 
 namespace ns3
@@ -60,7 +60,7 @@ namespace ns3
       int16_t m_qrInterfaceIndex;
 
       // Routing protocol objects
-      OlsrRoutingProtocol m_OlsrRoutingProtocol;
+      OLSRRoutingProtocol m_OlsrRoutingProtocol;
       QueryRoutingProtocol m_QueryRoutingProtocol;
       ClusterRoutingProtocol m_ClusterRoutingProtocol;
 

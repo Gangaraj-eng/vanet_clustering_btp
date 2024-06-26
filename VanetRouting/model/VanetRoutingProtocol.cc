@@ -78,7 +78,7 @@ namespace ns3
     void VanetRoutingProtocol::SetIpv4(Ptr<Ipv4> ipv4)
     {
       m_ipv4 = ipv4;
-      
+
       m_OlsrRoutingProtocol.SetIpv4(ipv4);
       m_QueryRoutingProtocol.SetIpv4(ipv4);
       m_ClusterRoutingProtocol.SetIpv4(ipv4);
@@ -89,11 +89,33 @@ namespace ns3
 
     void VanetRoutingProtocol::DoInitialize()
     {
-      NodeType currentNodeType = DynamicCast<CustomNode>(GetObject<Node>())->mnodeType;
-      m_OlsrRoutingProtocol.Initialize();
-      m_QueryRoutingProtocol.Initialize();
-      m_ClusterRoutingProtocol.Initialize();
-      NS_LOG_INFO("Started Vanet Routing Protocol");
+      Ptr<Node> node = GetObject<Node>();
+      NodeType currentNodeType = DynamicCast<CustomNode>(node)->mnodeType;
+     
+
+      if (currentNodeType == NodeType::CLUSTER_HEAD)
+      {
+        m_ClusterRoutingProtocol.SetMainInterface(1);
+        m_ClusterRoutingProtocol.Initialize();
+
+        m_QueryRoutingProtocol.SetMainInterface(2);
+        m_QueryRoutingProtocol.Initialize();
+
+        m_OlsrRoutingProtocol.SetMainInterface(3);
+        m_OlsrRoutingProtocol.Initialize();
+      }
+      else if (currentNodeType == NodeType::UAV)
+      {
+       
+        m_OlsrRoutingProtocol.SetMainInterface(1);
+        m_OlsrRoutingProtocol.Initialize();
+      }
+      else if (currentNodeType == NodeType::RSU)
+      {
+        m_QueryRoutingProtocol.SetMainInterface(1);
+        m_QueryRoutingProtocol.Initialize();
+      }
+      // NS_LOG_INFO("Started Vanet Routing Protocol");
     }
 
     void VanetRoutingProtocol::DoDispose()

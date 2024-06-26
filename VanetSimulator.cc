@@ -157,7 +157,7 @@ void VanetSimulator::InstallInternetStack()
 
   LogComponentEnable("VanetRoutingProtocol", LOG_LEVEL_INFO);
   LogComponentEnable("ClusterRoutingProtocol", LOG_LEVEL_INFO);
-  LogComponentEnable("OlsrRoutingProtocol", LOG_LEVEL_INFO);
+  LogComponentEnable("OLSRRoutingProtocol", LOG_LEVEL_INFO);
   LogComponentEnable("QueryRoutingProtocol", LOG_LEVEL_INFO);
 
   InternetStackHelper stack;

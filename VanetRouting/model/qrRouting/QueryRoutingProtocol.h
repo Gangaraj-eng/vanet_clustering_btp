@@ -35,10 +35,20 @@ namespace ns3
       void SetIpv4(Ptr<Ipv4> ipv4) override;
       void PrintRoutingTable(Ptr<OutputStreamWrapper> stream,
                              Time::Unit unit = Time::S) const override;
-                             
+
     protected:
       void DoInitialize() override;
       void DoDispose() override;
+
+    private:
+      Ipv4Address m_mainAddress;
+      uint32_t m_mainInterfaceIndex; // index of the interface used 
+
+      // main main things
+      Ptr<Ipv4> m_ipv4;
+
+    public:
+      void SetMainInterface(uint32_t interfaceIndex);
     };
   } // namespace btp
 
